@@ -1,0 +1,14 @@
+# Segredos locais
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Artefatos do Next.js e dependências
+.next/
+node_modules/
+
+# Estado temporário do CLI do Supabase
+supabase/.temp/
+
+.vercel
