@@ -33,6 +33,47 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       if (error.code === '42501') {
+        // A tela de onboarding pode ter sido aberta antes de outro pedido
+        // concluir a associação. Nesse caso, devolvemos o vínculo atual para
+        // que o cliente recupere o contexto sem tentar criar outra organização.
+        const { data: existingMembership, error: membershipError } = await supabase
+          .from('organization_members')
+          .select('organization_id, role')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true })
+          .limit(1)
+          .maybeSingle();
+
+        if (membershipError) {
+          return supabaseErrorResponse(membershipError);
+        }
+
+        if (existingMembership) {
+          const { data: existingOrganization, error: organizationError } = await supabase
+            .from('organizations')
+            .select('id, name, slug')
+            .eq('id', existingMembership.organization_id)
+            .maybeSingle();
+
+          if (organizationError) {
+            return supabaseErrorResponse(organizationError);
+          }
+
+          if (existingOrganization) {
+            return json(
+              {
+                error: 'Seu usuário já está vinculado a uma organização.',
+                code: 'ORGANIZATION_EXISTS',
+                data: {
+                  organization: existingOrganization,
+                  membership: { role: existingMembership.role },
+                },
+              },
+              409,
+            );
+          }
+        }
+
         return errorJson('Seu usuário já possui um vínculo ou não pode criar outra organização.', 409);
       }
       if (error.code === '23514') {

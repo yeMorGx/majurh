@@ -34,6 +34,16 @@ export function OrganizationOnboarding({
       const payload = await response.json();
 
       if (!response.ok) {
+        if (
+          response.status === 409 &&
+          payload.code === 'ORGANIZATION_EXISTS' &&
+          payload.data?.organization &&
+          payload.data?.membership
+        ) {
+          onCompleted(payload.data);
+          return;
+        }
+
         setError(payload.error ?? 'Não foi possível configurar sua organização.');
         return;
       }
