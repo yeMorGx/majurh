@@ -17,7 +17,29 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const { supabaseUrl, supabasePublishableKey } = getPublicEnv();
+  let supabaseUrl: string;
+  let supabasePublishableKey: string;
+
+  try {
+    ({ supabaseUrl, supabasePublishableKey } = getPublicEnv());
+  } catch (error) {
+    if (!isMissingConfigurationError(error)) {
+      throw error;
+    }
+
+    if (request.nextUrl.pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Supabase não está configurado neste ambiente.' },
+        { status: 503, headers: { 'Cache-Control': 'no-store' } },
+      );
+    }
+
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/login';
+    redirectUrl.searchParams.set('configuration', 'missing');
+    return NextResponse.redirect(redirectUrl);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient<Database>(supabaseUrl, supabasePublishableKey, {
@@ -51,4 +73,11 @@ export async function updateSession(request: NextRequest) {
   }
 
   return response;
+}
+
+function isMissingConfigurationError(error: unknown) {
+  return (
+    error instanceof Error &&
+    error.message.startsWith('Variável de ambiente obrigatória ausente:')
+  );
 }

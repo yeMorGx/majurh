@@ -3,7 +3,7 @@
 import { Icon } from '@/components/ui/icon';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -11,6 +11,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [configurationMissing, setConfigurationMissing] = useState(false);
+
+  useEffect(() => {
+    setConfigurationMissing(
+      new URLSearchParams(window.location.search).get('configuration') === 'missing',
+    );
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -39,6 +46,11 @@ export default function LoginPage() {
           <p className="eyebrow">Acesso interno</p>
           <h1>Entrar no seu posto de controle.</h1>
           <p>Organize candidatos, processos e documentos em um só lugar.</p>
+          {configurationMissing && (
+            <div className="form-error" role="alert">
+              O ambiente de produção ainda não está conectado ao Supabase. Configure as variáveis do Supabase na Vercel e publique novamente.
+            </div>
+          )}
           <form className="login-form" onSubmit={handleSubmit}>
             <div className="field"><label htmlFor="email">E-mail</label><input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="voce@empresa.com" /></div>
             <div className="field"><label htmlFor="password">Senha</label><input className="form-input" id="password" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" /></div>

@@ -63,6 +63,19 @@ npm run dev
 
 Abra `http://127.0.0.1:3000/login`. As rotas internas renovam a sessão via `proxy.ts` e as consultas usam o cliente SSR do Supabase.
 
+## Deploy na Vercel
+
+No projeto da Vercel, abra **Settings → Environment Variables** e cadastre estas duas variáveis para o ambiente **Production** (e também **Preview**, se necessário):
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua-chave-publishable
+```
+
+Depois de salvar, faça um novo deploy. Não use `service_role` ou outra chave secreta em uma variável `NEXT_PUBLIC_`.
+
+Sem essas variáveis, `/api/health` retorna `503` e as rotas internas redirecionam para o login com uma mensagem de configuração, em vez de exibir um erro interno genérico.
+
 ## Fluxo de demonstração
 
 1. Entrar com o usuário associado à organização.
