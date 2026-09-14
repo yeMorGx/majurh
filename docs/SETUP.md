@@ -9,9 +9,9 @@
 
 ## White-label B2B
 
-Majurh é a marca principal da plataforma. Depois que uma organização é criada, administradores podem abrir **Configurações → Identidade da organização** para definir o nome exibido, uma logo por URL HTTPS e as cores principal/de destaque. O nome e a logo também atualizam o título da aba e o favicon após o carregamento do tenant. Os valores são opcionais: quando ficam vazios, a interface usa a identidade padrão do Majurh.
+Majurh é a marca principal da plataforma. Administradores podem abrir **Organização** para definir o nome exibido, uma logo por URL HTTPS, as cores principal/de destaque e o conteúdo visual da tela de login: banner, texto de apoio, título e descrição. O nome e a logo também atualizam o título da aba e o favicon após o carregamento do tenant. Os valores são opcionais: quando ficam vazios, a interface usa a identidade padrão do Majurh. A tela pública usa a identidade quando aberta como `/login?org=slug`.
 
-A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos de identidade à tabela `public.organizations`. Execute essa migração no banco Neon antes de usar o editor de marca em produção.
+A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos da tela de login, o e-mail dos membros e a tabela de convites. Execute as duas migrações no banco Neon antes de usar o editor de marca e a administração de acessos em produção.
 
 ## Variáveis locais
 
@@ -41,9 +41,18 @@ As consultas são executadas exclusivamente no servidor e cada rota valida o ví
 
 ## Neon Auth
 
-O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e pode receber a identidade do tenant em uma etapa de domínio personalizado.
+O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e recebe a identidade do tenant pelo parâmetro seguro `org` ou pelos links gerados na área de organização.
 
-Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo fluxo de cadastro ou recuperação do provedor.
+Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador ou pela recuperação do provedor. O cadastro público foi desativado: novos acessos devem ser criados em **Administração → Novo acesso**, por convite.
+
+### Convites e primeiro acesso
+
+1. Um administrador abre `/administracao` e informa o e-mail e o papel (`Recrutador` ou `Visualizador`).
+2. A aplicação cria um token aleatório, grava somente seu hash e mostra o link copiável por sete dias.
+3. A pessoa abre `/convite/[token]`, define o nome e a senha — ou entra se já possuir uma conta.
+4. Depois da autenticação, a aplicação marca o convite como utilizado, cria o perfil e registra `organization_members`.
+
+O fluxo não envia e-mail automaticamente nesta etapa. O administrador deve compartilhar o link por um canal corporativo confiável. Um usuário autenticado sem associação não pode criar organização nem concluir um perfil para entrar por conta própria.
 
 Em **Auth → Configuration → Domains** do branch principal, mantenha `https://majurh.vercel.app` como domínio confiável. O Neon Auth rejeita requisições de origens não cadastradas com `403 Invalid origin`. Links individuais de preview da Vercel podem permanecer protegidos e não devem ser usados para o cadastro de usuários.
 
@@ -78,9 +87,10 @@ Sem essas variáveis, `/api/health` retorna `503` e as rotas internas exibem uma
 
 ## Fluxo de demonstração
 
-1. Entrar com um usuário do Neon Auth.
-2. Completar o perfil e criar a organização.
-3. Cadastrar um candidato.
+1. Entrar com o usuário administrador do Neon Auth.
+2. Configurar o tenant em **Organização** e conferir a prévia da tela de login.
+3. Criar um convite em **Administração** e abrir o link em uma janela anônima.
+4. Cadastrar um candidato.
 4. Abrir o perfil e criar um processo.
 5. Alterar o status e conferir o histórico.
 6. Enviar um currículo ou documento de teste.

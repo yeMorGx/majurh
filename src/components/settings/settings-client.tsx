@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
-import { platformBrand, type OrganizationBrand } from '@/lib/branding';
+import type { OrganizationBrand } from '@/lib/branding';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
@@ -27,13 +27,6 @@ type VacancyForm = {
   unit: string;
 };
 
-type BrandForm = {
-  name: string;
-  logoUrl: string;
-  primaryColor: string;
-  accentColor: string;
-};
-
 const emptyVacancyForm: VacancyForm = { title: '', department: '', unit: '' };
 
 export function SettingsClient() {
@@ -46,10 +39,6 @@ export function SettingsClient() {
   const [togglingVacancy, setTogglingVacancy] = useState('');
   const [error, setError] = useState('');
   const [vacancyError, setVacancyError] = useState('');
-  const [brandForm, setBrandForm] = useState<BrandForm>({ name: '', logoUrl: '', primaryColor: '', accentColor: '' });
-  const [savingBrand, setSavingBrand] = useState(false);
-  const [brandError, setBrandError] = useState('');
-  const [brandMessage, setBrandMessage] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -63,15 +52,6 @@ export function SettingsClient() {
 
         const settings = mePayload.data as SettingsData;
         setData(settings);
-        if (settings.organization) {
-          setBrandForm({
-            name: settings.organization.name,
-            logoUrl: settings.organization.brand_logo_url ?? '',
-            primaryColor: settings.organization.brand_primary_color ?? '',
-            accentColor: settings.organization.brand_accent_color ?? '',
-          });
-        }
-
         if (settings.organization?.id) {
           setVacancyLoading(true);
           const vacanciesResponse = await fetch(
@@ -99,56 +79,9 @@ export function SettingsClient() {
   const organizationId = data?.organization?.id ?? '';
   const role = data?.membership?.role;
   const canManageVacancies = role === 'admin' || role === 'recruiter';
-  const canManageBrand = role === 'admin';
 
   function updateVacancyForm(field: keyof VacancyForm, value: string) {
     setVacancyForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function updateBrandForm(field: keyof BrandForm, value: string) {
-    setBrandForm((current) => ({ ...current, [field]: value }));
-  }
-
-  async function saveBrand(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!organizationId) return;
-
-    setSavingBrand(true);
-    setBrandError('');
-    setBrandMessage('');
-    try {
-      const response = await fetch('/api/organizations', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          organizationId,
-          name: brandForm.name,
-          brandLogoUrl: brandForm.logoUrl,
-          brandPrimaryColor: brandForm.primaryColor,
-          brandAccentColor: brandForm.accentColor,
-        }),
-      });
-      const payload = await response.json();
-      if (!response.ok) {
-        setBrandError(payload.error || 'Não foi possível salvar a identidade da organização.');
-        return;
-      }
-
-      const organization = payload.data.organization as OrganizationBrand;
-      setData((current) => current ? { ...current, organization } : current);
-      setBrandForm({
-        name: organization.name,
-        logoUrl: organization.brand_logo_url ?? '',
-        primaryColor: organization.brand_primary_color ?? '',
-        accentColor: organization.brand_accent_color ?? '',
-      });
-      window.dispatchEvent(new CustomEvent<OrganizationBrand>('organization:updated', { detail: organization }));
-      setBrandMessage('Identidade da organização atualizada.');
-    } catch {
-      setBrandError('Não foi possível salvar a identidade da organização. Tente novamente.');
-    } finally {
-      setSavingBrand(false);
-    }
   }
 
   async function createVacancy(event: React.FormEvent<HTMLFormElement>) {
@@ -242,40 +175,6 @@ export function SettingsClient() {
             </section>
           </div>
 
-          {canManageBrand && (
-            <section className="panel brand-settings-panel">
-              <div className="panel-header">
-                <div><h2>Identidade da organização</h2><p>Personalize a experiência do seu time dentro do Majurh.</p></div>
-                <span className="brand-platform-tag">{platformBrand.name} B2B</span>
-              </div>
-              <form className="brand-settings-form" onSubmit={saveBrand}>
-                <div className="field">
-                  <label htmlFor="brand-name">Nome exibido</label>
-                  <input className="form-input" id="brand-name" value={brandForm.name} onChange={(event) => updateBrandForm('name', event.target.value)} minLength={2} maxLength={120} required />
-                  <small>Esse nome aparece na navegação e identifica o espaço da empresa.</small>
-                </div>
-                <div className="field">
-                  <label htmlFor="brand-logo-url">URL da logo</label>
-                  <input className="form-input" id="brand-logo-url" type="text" inputMode="url" value={brandForm.logoUrl} onChange={(event) => updateBrandForm('logoUrl', event.target.value)} placeholder="https://suaempresa.com/logo.svg" />
-                  <small>Use uma URL HTTPS ou um caminho local como /logo.svg. Em branco, o Majurh usa a logo padrão.</small>
-                </div>
-                <div className="brand-color-grid">
-                  <div className="field">
-                    <label htmlFor="brand-primary-color">Cor principal</label>
-                    <div className="brand-color-control"><input type="color" value={hexOrDefault(brandForm.primaryColor, '#0f4d3a')} onChange={(event) => updateBrandForm('primaryColor', event.target.value)} aria-label="Selecionar cor principal" /><input className="form-input" id="brand-primary-color" value={brandForm.primaryColor} onChange={(event) => updateBrandForm('primaryColor', event.target.value)} placeholder="#0f4d3a" /></div>
-                  </div>
-                  <div className="field">
-                    <label htmlFor="brand-accent-color">Cor de destaque</label>
-                    <div className="brand-color-control"><input type="color" value={hexOrDefault(brandForm.accentColor, '#138a62')} onChange={(event) => updateBrandForm('accentColor', event.target.value)} aria-label="Selecionar cor de destaque" /><input className="form-input" id="brand-accent-color" value={brandForm.accentColor} onChange={(event) => updateBrandForm('accentColor', event.target.value)} placeholder="#138a62" /></div>
-                  </div>
-                </div>
-                {brandError && <div className="form-error" role="alert">{brandError}</div>}
-                {brandMessage && <div className="form-success" role="status">{brandMessage}</div>}
-                <div className="form-actions"><button className="button button-primary" disabled={savingBrand}>{savingBrand ? 'Salvando identidade…' : 'Salvar identidade'}<Icon name="check" size={16} /></button></div>
-              </form>
-            </section>
-          )}
-
           <section className="panel">
             <div className="panel-header">
               <div>
@@ -332,8 +231,4 @@ export function SettingsClient() {
 
 function roleLabel(role: string | undefined) {
   return role === 'admin' ? 'Administrador' : role === 'recruiter' ? 'Recrutador' : role === 'viewer' ? 'Visualizador' : 'Sem papel';
-}
-
-function hexOrDefault(value: string, fallback: string) {
-  return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
 }

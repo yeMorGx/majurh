@@ -12,6 +12,10 @@ export type OrganizationBrand = {
   brand_logo_url?: string | null;
   brand_primary_color?: string | null;
   brand_accent_color?: string | null;
+  brand_login_banner_url?: string | null;
+  brand_login_kicker?: string | null;
+  brand_login_headline?: string | null;
+  brand_login_description?: string | null;
 };
 
 const defaultColors = {
@@ -41,6 +45,8 @@ export function normalizeHex(value: string | null | undefined) {
     : null;
 }
 
-export function isSafeLogoUrl(value: string) {
+export function isSafeAssetUrl(value: string) {
   return (value.startsWith('/') && !value.startsWith('//') && !value.includes('..')) || /^https:\/\/[^\s]+$/i.test(value);
 }
+
+export const isSafeLogoUrl = isSafeAssetUrl;

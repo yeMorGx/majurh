@@ -1,7 +1,7 @@
 'use client';
 
 import { authClient } from '@/lib/auth/client';
-import { OrganizationOnboarding } from '@/components/organization/organization-onboarding';
+import { AccessPending } from '@/components/organization/access-pending';
 import { ProfileOnboarding } from '@/components/auth/profile-onboarding';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -153,6 +153,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="sidebar-section-label sidebar-lower-label">Administração</div>
         <nav className="sidebar-nav" aria-label="Administração">
+          {me?.organization && <Link className={`sidebar-link ${pathname.startsWith('/organizacao') ? 'is-active' : ''}`} href="/organizacao">
+            <Icon name="briefcase" />
+            <span>Organização</span>
+          </Link>}
+          {me?.membership?.role === 'admin' && <Link className={`sidebar-link ${pathname.startsWith('/administracao') ? 'is-active' : ''}`} href="/administracao">
+            <Icon name="users" />
+            <span>Administração</span>
+          </Link>}
           <Link className={`sidebar-link ${pathname.startsWith('/configuracoes') ? 'is-active' : ''}`} href="/configuracoes">
             <Icon name="settings" />
             <span>Configurações</span>
@@ -214,9 +222,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onCompleted={(profile) => setMe((current) => current ? { ...current, profile } : current)}
             />
           ) : meLoaded && me?.profile && !me.organization ? (
-            <OrganizationOnboarding
+            <AccessPending
               email={me.user.email}
-              onCompleted={({ organization, membership }) => setMe((current) => current ? { ...current, organization, membership } : current)}
             />
           ) : children}
         </main>

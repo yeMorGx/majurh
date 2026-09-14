@@ -27,6 +27,16 @@ export async function POST(request: NextRequest) {
       return errorJson('É necessário estar autenticado.', 401);
     }
 
+    const memberships = await db`
+      select 1
+      from public.organization_members
+      where user_id = ${userId}
+      limit 1
+    `;
+    if (!memberships.length) {
+      return errorJson('Seu acesso só pode ser concluído por um convite de organização.', 403);
+    }
+
     const rows = await db`
       insert into public.profiles (id, full_name)
       values (${userId}, ${fullName})

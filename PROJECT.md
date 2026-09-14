@@ -4,7 +4,7 @@
 
 ## Status de implementação — 14/09/2026
 
-O núcleo do MVP foi migrado para Neon: Neon Auth para identidade, Neon Postgres para dados relacionais e Vercel Blob privado para documentos. O AppShell responsivo, dashboard, CRUD de candidatos, processos com histórico, perfil, onboarding e vagas continuam disponíveis com as mesmas rotas de API.
+O núcleo do MVP foi migrado para Neon: Neon Auth para identidade, Neon Postgres para dados relacionais e Vercel Blob privado para documentos. O acesso agora é fechado: a tela pública só permite entrar, administradores geram convites de uso único e novos membros concluem o cadastro no link recebido. A área de organização concentra o white-label, incluindo logo, cores, textos e banner da tela de login.
 
 Validações executadas:
 
@@ -15,7 +15,7 @@ Validações executadas:
 
 Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O domínio oficial `https://majurh.vercel.app` também foi cadastrado como origem confiável no Neon Auth. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
 
-Pendência operacional: criar novamente no Neon Auth as contas que precisam acessar o sistema. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
+Pendência operacional: executar `neon/migrations/0003_admin_invitations_and_login_branding.sql` no banco Neon antes de usar os convites e o editor de login em produção. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
 
 ## 1. Visão do produto
 
@@ -77,12 +77,16 @@ Não implementar agora: Kanban com arrastar e soltar, tarefas, calendário, noti
 1. A pessoa acessa `/login`.
 2. Informa e-mail e senha.
 3. A aplicação valida a sessão no servidor e redireciona para `/dashboard`.
-4. Rotas internas sem sessão redirecionam para `/login`.
-5. O menu do usuário permite sair.
+4. Novos usuários não encontram cadastro público: o administrador cria um convite em `/administracao`.
+5. A pessoa convidada acessa `/convite/[token]`, cria a senha e é vinculada à organização.
+6. Rotas internas sem sessão redirecionam para `/login`.
+7. O menu do usuário permite sair.
 
 Critérios de aceite:
 
 - A senha nunca é armazenada na aplicação.
+- O login público não oferece criação de conta.
+- Um convite tem validade de sete dias, é armazenado apenas por hash e só pode ser aceito uma vez.
 - Um usuário deslogado não consegue ler dados pelo navegador nem pela API.
 - A sessão é renovada por cookies seguros no fluxo SSR.
 - Mensagens de erro não revelam se um e-mail existe ou não.
@@ -213,7 +217,10 @@ app/
 ├── (app)/candidatos/[id]/page.tsx
 ├── (app)/processos/page.tsx
 ├── (app)/documentos/page.tsx
+├── (app)/administracao/page.tsx
+├── (app)/organizacao/page.tsx
 ├── (app)/configuracoes/page.tsx
+├── convite/[token]/page.tsx
 ├── error.tsx
 ├── loading.tsx
 └── not-found.tsx
@@ -293,13 +300,19 @@ Catálogo temporário de migração com `id`, `email`, `full_name` e `created_at
 
 #### `organizations`
 
-`id`, `name`, `slug`, `created_at`, `updated_at`.
+`id`, `name`, `slug`, identidade visual opcional, identidade da tela de login, `created_at`, `updated_at`.
 
 #### `organization_members`
 
-`id`, `organization_id`, `user_id`, `role`, `created_at`.
+`id`, `organization_id`, `user_id`, `email`, `role`, `created_at`.
 
 Roles iniciais: `admin`, `recruiter`, `viewer`. Criar índice composto e restrição única para `(organization_id, user_id)`.
+
+#### `organization_invitations`
+
+`id`, `organization_id`, `email`, `role`, `token_hash`, `invited_by`, `expires_at`, `accepted_at`, `created_at`.
+
+O token bruto só aparece uma vez para o administrador copiar o link. A aceitação cria ou atualiza o perfil e a associação do usuário na organização.
 
 #### `vacancies`
 
@@ -443,7 +456,9 @@ Componentes prioritários:
 ## 11. Critérios de pronto do MVP
 
 - [ ] Login, logout e proteção de rotas funcionando.
-- [ ] Admin consegue cadastrar organização, membro, vaga e candidato.
+- [ ] Admin consegue configurar a organização, criar/revogar convites, cadastrar vaga e candidato.
+- [ ] Login público não oferece cadastro e pessoa sem vínculo fica bloqueada até receber um convite.
+- [ ] Convite de uso único cria o perfil e a associação à organização.
 - [ ] CPF duplicado gera alerta e não cria ficha repetida.
 - [ ] Um candidato pode ter dois ou mais processos.
 - [ ] Troca de status salva o histórico com ator e horário.
@@ -479,7 +494,9 @@ O calendário já tem uma interface própria alinhada aos tokens do produto. A i
 
 ### Diretriz white-label B2B
 
-Majurh é a marca da plataforma e o fallback visual. A organização é o tenant que aparece no espaço autenticado e pode configurar nome exibido, logo, cor principal e cor de destaque; o nome e a logo também atualizam o título da aba e o favicon. O vínculo de cada usuário continua isolado por `organization_members`; nenhuma identidade, configuração ou dado operacional deve atravessar organizações. Domínio customizado, convites e cobrança por tenant ficam para uma etapa posterior.
+Majurh é a marca da plataforma e o fallback visual. A organização é o tenant que aparece no espaço autenticado e pode configurar nome exibido, logo, cor principal, cor de destaque, banner, texto de apoio, título e descrição da tela de login em `/organizacao`; o nome e a logo também atualizam o título da aba e o favicon. O link `/login?org={slug}` apresenta a identidade pública do tenant. O vínculo de cada usuário continua isolado por `organization_members`; nenhuma identidade, configuração ou dado operacional deve atravessar organizações.
+
+O gerenciamento de pessoas fica separado em `/administracao`. Somente administradores podem criar ou revogar convites, e os papéis de novos membros começam limitados a `recruiter` ou `viewer`. O envio de e-mail transacional ainda não está conectado: o link é gerado para cópia manual, evitando colocar credenciais de provedor no navegador.
 
 ### Referência de design
 
@@ -494,6 +511,7 @@ O sistema visual adota o [Material Design 3](https://m3.material.io/) como refer
 - [ ] Timer inicia, pausa e atualiza o tempo em tempo real.
 - [ ] Calendário permite navegar entre meses e criar evento no dia escolhido.
 - [ ] A tela funciona em desktop e mobile, com foco visível e redução de movimento respeitada.
-- [ ] Administrador consegue configurar nome, logo e cores do tenant sem afetar outra organização.
+- [ ] Administrador consegue configurar nome, logo, cores e a composição da tela de login sem afetar outra organização.
+- [ ] A tela de login aceita a identidade do tenant por slug e mantém o fallback do Majurh.
 - [ ] Majurh aparece como fallback quando a organização não possui personalização.
 - [ ] Google e Outlook só são considerados concluídos após OAuth, sincronização incremental, revogação e tratamento de conflitos testados.
