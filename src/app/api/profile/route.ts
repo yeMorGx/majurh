@@ -1,5 +1,5 @@
 import { getAuthenticatedClient } from '@/lib/api/auth';
-import { errorJson, isRecord, json, supabaseErrorResponse } from '@/lib/api/http';
+import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -22,24 +22,24 @@ export async function PATCH(request: NextRequest) {
       return errorJson('O nome deve ter entre 2 e 120 caracteres.', 400);
     }
 
-    const { supabase, userId } = await getAuthenticatedClient();
+    const { db, userId } = await getAuthenticatedClient();
     if (!userId) {
       return errorJson('É necessário estar autenticado.', 401);
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ full_name: fullName })
-      .eq('id', userId)
-      .select('id, full_name, avatar_url')
-      .single();
+    const rows = await db`
+      update public.profiles
+      set full_name = ${fullName}
+      where id = ${userId}
+      returning id, full_name, avatar_url
+    `;
 
-    if (error) {
-      return supabaseErrorResponse(error, { notFoundMessage: 'Perfil não encontrado. Complete seu primeiro acesso antes de editar os dados.' });
+    if (!rows[0]) {
+      return errorJson('Perfil não encontrado. Complete seu primeiro acesso antes de editar os dados.', 404);
     }
 
-    return json({ data: { profile: data } });
+    return json({ data: { profile: rows[0] } });
   } catch (error) {
-    return supabaseErrorResponse(error);
+    return databaseErrorResponse(error);
   }
 }

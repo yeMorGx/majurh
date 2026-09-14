@@ -165,7 +165,7 @@ export function SettingsClient() {
 
             <section className="panel">
               <div className="panel-header">
-                <div><h2>Seu acesso</h2><p>Identidade autenticada pelo Supabase Auth.</p></div>
+                <div><h2>Seu acesso</h2><p>Identidade autenticada pelo Neon Auth.</p></div>
                 <Link className="text-link" href="/perfil">Editar perfil <Icon name="arrow-up-right" size={14} /></Link>
               </div>
               <dl className="detail-list">

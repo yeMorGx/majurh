@@ -277,6 +277,9 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .login-form-wrap > p { margin: 10px 0 28px; color: var(--vc-muted); }
 .login-form { display: grid; gap: 16px; }
 .login-form .button { width: 100%; margin-top: 4px; }
+.login-mode-toggle { display: block; width: 100%; margin-top: 16px; padding: 0; border: 0; background: transparent; color: var(--vc-green); font: inherit; font-size: 12px; font-weight: 650; text-align: center; cursor: pointer; }
+.login-mode-toggle:hover { text-decoration: underline; }
+.login-mode-toggle:focus-visible { outline: 2px solid var(--vc-green); outline-offset: 4px; border-radius: 4px; }
 .login-side-art { position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 48px; background: var(--vc-forest); color: white; }
 .login-side-art::before, .login-side-art::after { content: ''; position: absolute; border: 1px solid rgba(221,243,233,0.24); transform: rotate(-26deg); }
 .login-side-art::before { width: 360px; height: 500px; right: -90px; top: -90px; border-radius: 52px; }

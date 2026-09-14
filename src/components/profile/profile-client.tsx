@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
-import { createClient } from '@/lib/supabase/client';
+import { authClient } from '@/lib/auth/client';
 import { useEffect, useMemo, useState } from 'react';
 
 type Profile = {
@@ -21,6 +21,7 @@ export function ProfileClient() {
   const [data, setData] = useState<ProfileData | null>(null);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
   const [loading, setLoading] = useState(true);
@@ -118,7 +119,12 @@ export function ProfileClient() {
       return;
     }
 
-    if (!emailChanged && !newPassword) {
+    if (emailChanged) {
+      setSecurityError('A alteração de e-mail ainda não está disponível nesta etapa da migração.');
+      return;
+    }
+
+    if (!newPassword) {
       setSecurityError('Informe um novo e-mail ou uma nova senha para salvar.');
       return;
     }
@@ -133,24 +139,27 @@ export function ProfileClient() {
       return;
     }
 
+    if (newPassword && !currentPassword) {
+      setSecurityError('Informe sua senha atual para definir uma nova senha.');
+      return;
+    }
+
     setSavingSecurity(true);
     try {
-      const supabase = createClient();
       const messages: string[] = [];
 
-      if (emailChanged) {
-        const { error } = await supabase.auth.updateUser({ email: normalizedEmail });
-        if (error) throw error;
-        messages.push('Enviamos um link de confirmação para o novo e-mail.');
-      }
-
       if (newPassword) {
-        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        const { error } = await authClient.changePassword({
+          currentPassword,
+          newPassword,
+          revokeOtherSessions: false,
+        });
         if (error) throw error;
         messages.push('Senha atualizada.');
       }
 
       setNewPassword('');
+      setCurrentPassword('');
       setPasswordConfirmation('');
       setSecurityMessage(messages.join(' '));
     } catch {
@@ -240,10 +249,24 @@ export function ProfileClient() {
                     type="email"
                     autoComplete="email"
                     required
+                    readOnly
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
                   />
-                  <small>Alterar o e-mail pode exigir uma confirmação antes de concluir.</small>
+                  <small>O e-mail é administrado pelo Neon Auth e permanece somente para leitura nesta etapa.</small>
+                </div>
+                <div className="field">
+                  <label htmlFor="profile-current-password">Senha atual</label>
+                  <input
+                    className="form-input"
+                    id="profile-current-password"
+                    name="currentPassword"
+                    type="password"
+                    autoComplete="current-password"
+                    value={currentPassword}
+                    onChange={(event) => setCurrentPassword(event.target.value)}
+                    placeholder="Obrigatória para trocar a senha"
+                  />
                 </div>
                 <div className="field">
                   <label htmlFor="profile-new-password">Nova senha</label>
@@ -271,7 +294,7 @@ export function ProfileClient() {
                     onChange={(event) => setPasswordConfirmation(event.target.value)}
                   />
                 </div>
-                <p className="profile-security-copy">Deixe os campos de senha em branco se quiser alterar apenas o e-mail.</p>
+                <p className="profile-security-copy">Deixe os campos de senha em branco se não quiser trocar sua senha.</p>
                 {securityError && <div className="form-error" role="alert">{securityError}</div>}
                 {securityMessage && <div className="form-success" role="status">{securityMessage}</div>}
                 <div className="form-actions">

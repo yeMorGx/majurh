@@ -26,7 +26,7 @@ export function isUuid(value: unknown): value is string {
   );
 }
 
-export function supabaseErrorResponse(
+export function databaseErrorResponse(
   error: unknown,
   options: {
     duplicateMessage?: string;
@@ -64,7 +64,7 @@ export function supabaseErrorResponse(
   }
 
   if (isConfigurationError(error)) {
-    return errorJson('Supabase não está configurado neste ambiente.', 503);
+    return errorJson('O banco de dados não está configurado neste ambiente.', 503);
   }
 
   return errorJson('Não foi possível concluir a operação.', 500);

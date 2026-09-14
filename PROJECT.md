@@ -2,18 +2,20 @@
 
 > Documento de referência para construir o MVP no Codex.
 
-## Status de implementação — 27/08/2026
+## Status de implementação — 14/09/2026
 
-O MVP já possui a fundação SSR do Supabase, autenticação por e-mail e senha, AppShell responsivo, dashboard operacional, CRUD de candidatos, processos com histórico automático, upload privado e revisão de documentos. O front também administra vagas em Configurações, alerta CPF duplicado durante o cadastro e registra desistências em um diálogo próprio com motivo, observação e decisão de reentrada. As páginas principais têm estados de carregamento, vazio e erro.
+O núcleo do MVP foi migrado para Neon: Neon Auth para identidade, Neon Postgres para dados relacionais e Vercel Blob privado para documentos. O AppShell responsivo, dashboard, CRUD de candidatos, processos com histórico, perfil, onboarding e vagas continuam disponíveis com as mesmas rotas de API.
 
 Validações executadas:
 
 - `npm run typecheck`.
 - `npm run build`.
-- `supabase db lint --local --fail-on error` — nenhum erro nos schemas.
-- `supabase test db` — 24/24 testes, incluindo isolamento por organização e papéis admin/viewer.
+- `npm run typecheck` — aprovado.
+- `npm run build` — aprovado com variáveis de build temporárias.
 
-Pendência de ambiente: configurar um projeto Supabase real, ou manter Auth/REST/Storage locais ativos, para executar o fluxo de navegador ponta a ponta. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
+Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
+
+Pendência operacional: criar novamente no Neon Auth as contas que precisam acessar o sistema. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
 
 ## 1. Visão do produto
 
@@ -221,7 +223,7 @@ Convenções:
 
 - Server Components por padrão.
 - Client Components somente para formulário, busca interativa, modal, tabs, upload e drag-and-drop futuro.
-- Consultas de leitura podem ocorrer no Server Component com o cliente Supabase de servidor.
+- Consultas de leitura podem ocorrer no Server Component com o cliente Neon server-side.
 - Mutations devem usar Server Actions ou Route Handlers, validação compartilhada e retorno de erro tipado.
 - Filtros e paginação devem ser refletidos nos parâmetros da URL.
 
@@ -237,34 +239,37 @@ Convenções:
 - React Hook Form + Zod para formulários e validação, se ainda não houver outra convenção no projeto.
 - `next/font` para carregar as fontes definidas em [DESIGN.md](./DESIGN.md).
 
-### Supabase
+### Neon e Vercel
 
-- Supabase Auth para e-mail e senha.
-- Supabase PostgreSQL para dados relacionais.
-- Supabase Storage para documentos.
-- `@supabase/ssr` para clientes de navegador/servidor e cookies.
-- `@supabase/supabase-js` para acesso ao SDK.
-- Migrações versionadas em `supabase/migrations/`.
-- Testes de RLS em `supabase/tests/`.
+- Neon Auth, baseado em Better Auth, para e-mail/senha e sessão.
+- Neon Postgres para dados relacionais.
+- Vercel Blob privado para documentos sensíveis.
+- `@neondatabase/auth` para cliente, handler e middleware de autenticação.
+- `@neondatabase/serverless` para consultas server-side com parâmetros.
+- `@vercel/blob` para upload, leitura autenticada e exclusão de arquivos.
+- Migração versionada em `neon/migrations/`.
+- Autorização por organização e papel aplicada nas Route Handlers.
 
 Variáveis esperadas em `.env.local`:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+DATABASE_URL=
+NEON_AUTH_BASE_URL=
+NEON_AUTH_COOKIE_SECRET=
+BLOB_READ_WRITE_TOKEN=
 ```
 
 Não colocar `service_role` ou secret key em variável `NEXT_PUBLIC_` nem em código executado no navegador. Se uma operação realmente privilegiada surgir no futuro, ela deve ficar em servidor confiável e ser revisada separadamente.
 
-No SSR, usar cliente de navegador para Client Components e cliente de servidor para Server Components, Server Actions e Route Handlers. O `proxy.ts` deve renovar a sessão, e a proteção de identidade deve usar `supabase.auth.getClaims()` ou `getUser()` quando for necessária uma leitura atualizada do usuário; não usar `getSession()` como validação de autorização no servidor.
+No SSR, usar o cliente Neon Auth para Client Components e `auth.getSession()` em Server Components, Server Actions e Route Handlers. O `proxy.ts` usa o middleware oficial do Neon Auth. Toda autorização de dados é feita no servidor, consultando `organization_members` antes da operação.
 
 ## 7. Modelo de dados proposto
 
-Não usar uma tabela genérica `users` para usuários da aplicação: o usuário de autenticação vive em `auth.users`; o perfil e a associação à organização ficam nas tabelas abaixo.
+Não usar uma tabela genérica `users` para usuários da aplicação: a identidade vive no schema gerenciado `neon_auth`; o perfil e a associação à organização ficam nas tabelas abaixo.
 
 ```mermaid
 erDiagram
-    auth_users ||--|| profiles : possui
+    neon_auth_users ||--|| profiles : possui
     organizations ||--o{ organization_members : contem
     profiles ||--o{ organization_members : participa
     organizations ||--o{ vacancies : possui
@@ -280,7 +285,11 @@ erDiagram
 
 #### `profiles`
 
-`id uuid primary key references auth.users(id)`, `full_name`, `avatar_url`, `created_at`, `updated_at`.
+`id text primary key`, `full_name`, `avatar_url`, `created_at`, `updated_at`.
+
+#### `legacy_auth_users`
+
+Catálogo temporário de migração com `id`, `email`, `full_name` e `created_at`. Permite resolver o ID antigo do Supabase quando a pessoa entra no Neon Auth com o mesmo e-mail. Não armazena senha nem token.
 
 #### `organizations`
 
@@ -324,30 +333,26 @@ O histórico não deve ser editável pela interface. Mudanças de status devem a
 
 Pode começar como enum ou tabela seed. Usar tabela se a empresa precisar editar os motivos sem nova migração.
 
-## 8. Segurança, RLS e LGPD
+## 8. Segurança, autorização e LGPD
 
-### RLS
+### Autorização por organização
 
-- Habilitar RLS em toda tabela exposta no schema `public`.
-- Revogar grants desnecessários de `anon` e `authenticated`; conceder somente as operações usadas.
 - Toda linha de domínio tem `organization_id`.
-- Políticas devem restringir o acesso à organização da pessoa autenticada e ao papel permitido.
-- Preferir `to authenticated` com predicado de associação; não usar apenas o papel como autorização.
-- Não usar `user_metadata` para decidir permissões. O papel da aplicação fica em `organization_members`.
-- Para evitar recursão nas políticas de associação, se for necessária uma função auxiliar, colocá-la em schema privado, fixar `search_path`, verificar `auth.uid()` e restringir grants.
-- Políticas de `UPDATE` devem ter `USING` e `WITH CHECK` quando houver risco de troca de organização ou responsável.
+- Toda Route Handler autentica com Neon Auth e consulta `organization_members` antes de ler ou alterar dados.
+- Papéis da aplicação: `admin`, `recruiter` e `viewer`, com verificação de nível para cada mutação.
+- Nunca usar `user_metadata` para decidir permissões; o papel fica em `organization_members`.
+- Consultas usam parâmetros; nomes de colunas dinâmicos só entram depois de passar por listas fechadas de validação.
 - Criar teste de permissão para cada tabela e operação antes de considerar a migração pronta.
 
-### Storage
+### Vercel Blob privado
 
-- Criar bucket privado `candidate-documents`.
+- Criar Blob Store privado `candidate-documents`.
 - Estruturar caminhos como `{organization_id}/{candidate_id}/{uuid}-{nome-seguro}`.
-- Criar políticas em `storage.objects` alinhadas às políticas das tabelas.
-- Usar upload padrão para arquivos de até 6 MB no MVP; se o limite precisar aumentar, avaliar TUS/resumable upload.
+- Usar upload server-side para arquivos de até 6 MB no MVP; se o limite precisar aumentar, avaliar upload multipart.
 - Não usar `upsert` como padrão: gerar caminho único para evitar sobrescrita e problemas de cache.
 - Validar extensão, MIME type e tamanho antes do upload.
-- Entregar arquivos por URL assinada com expiração curta.
-- Nunca exibir bucket público para documentos pessoais.
+- Entregar arquivos por rota autenticada com `get()` do Blob privado e cache `no-store`.
+- Nunca usar Blob público para documentos pessoais.
 
 ### Dados pessoais
 
@@ -370,15 +375,16 @@ src/
 │   ├── processes/
 │   └── documents/
 ├── lib/
-│   ├── supabase/
+│   ├── auth/
 │   │   ├── client.ts
-│   │   ├── server.ts
-│   │   └── proxy.ts
+│   │   └── server.ts
+│   ├── neon/
+│   │   └── db.ts
 │   ├── validations/
 │   ├── formatters/
 │   └── permissions/
 ├── types/
-│   └── database.types.ts
+│   └── (tipos de domínio próximos às features)
 └── styles/
 ```
 
@@ -404,11 +410,11 @@ Componentes prioritários:
 
 ### Fase 1 — Acesso e banco
 
-- Criar projeto Supabase.
-- Criar migrações para organizações, perfis, membros, vagas, candidatos, processos e histórico.
-- Configurar Auth, clientes SSR e `proxy.ts`.
-- Habilitar RLS, grants mínimos e testes.
-- Gerar tipos TypeScript do banco.
+- Criar recurso Neon conectado ao Vercel `majurh`.
+- Criar migração para organizações, perfis, membros, vagas, candidatos, processos e histórico.
+- Configurar Neon Auth, handler, cliente e `proxy.ts`.
+- Aplicar autorização server-side por organização e papel.
+- Conectar Blob Store privado para documentos.
 
 ### Fase 2 — Núcleo do fluxo
 
@@ -442,18 +448,17 @@ Componentes prioritários:
 - [ ] Um candidato pode ter dois ou mais processos.
 - [ ] Troca de status salva o histórico com ator e horário.
 - [ ] Status `Desistiu` exige motivo e permite registrar observação.
-- [ ] Documento é enviado para bucket privado e abre via URL assinada.
+- [ ] Documento é enviado para Blob privado e abre via rota autenticada.
 - [ ] Dashboard usa dados reais do banco.
 - [ ] Viewer não consegue alterar dados.
-- [ ] RLS e Storage RLS foram testados para permitir e negar acesso.
+- [ ] Autorização por organização e Blob privado foram testados para permitir e negar acesso.
 - [ ] Nenhuma chave privilegiada chega ao navegador.
 - [ ] Interface funciona em desktop e mobile.
 - [ ] Fluxos principais têm feedback de carregamento, erro e sucesso.
 
 ## 12. Referências técnicas atuais
 
-- [Supabase — criação de cliente SSR para Next.js](https://supabase.com/docs/guides/auth/server-side/nextjs)
-- [Supabase — Row Level Security](https://supabase.com/docs/guides/database/postgres/row-level-security)
-- [Supabase — segurança da Data API](https://supabase.com/docs/guides/api/securing-your-api)
-- [Supabase — controle de acesso do Storage](https://supabase.com/docs/guides/storage/security/access-control)
-- [Supabase — uploads padrão](https://supabase.com/docs/guides/storage/uploads/standard-uploads)
+- [Neon Auth para Next.js](https://github.com/neondatabase/neon-js/blob/main/packages/auth/NEXT-JS.md)
+- [Neon Serverless Driver](https://neon.tech/docs/serverless/serverless-driver)
+- [Integração Neon na Vercel](https://vercel.com/integrations/neon)
+- [Vercel Blob privado](https://vercel.com/docs/vercel-blob/private-storage)

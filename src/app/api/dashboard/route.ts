@@ -1,213 +1,59 @@
-import { getAuthenticatedClient } from '@/lib/api/auth';
-import { errorJson, isUuid, json, supabaseErrorResponse } from '@/lib/api/http';
-import { processStatuses } from '@/lib/processes/constants';
+import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
+import { databaseErrorResponse, errorJson, isUuid, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-const activeProcessStatuses = processStatuses.filter(
-  (status) => !['hired', 'rejected', 'withdrawn'].includes(status),
-);
+const activeProcessStatuses = ['new', 'screening', 'interview', 'evaluation', 'approved', 'documentation', 'admission', 'talent_pool'];
 
 export async function GET(request: NextRequest) {
   try {
     const organizationId = request.nextUrl.searchParams.get('organizationId');
-    if (!isUuid(organizationId)) {
-      return errorJson('Informe um organizationId válido.', 400);
-    }
-
-    const { supabase, userId } = await getAuthenticatedClient();
-    if (!userId) {
-      return errorJson('É necessário estar autenticado.', 401);
-    }
+    if (!isUuid(organizationId)) return errorJson('Informe um organizationId válido.', 400);
+    const { db, userId } = await getAuthenticatedClient();
+    if (!userId) return errorJson('É necessário estar autenticado.', 401);
+    if (!await getOrganizationRole(db, userId, organizationId)) return errorJson('Você não tem acesso a esta organização.', 403);
 
     const monthStart = new Date();
     monthStart.setUTCDate(1);
     monthStart.setUTCHours(0, 0, 0, 0);
-
-    const [
-      activeResult,
-      interviewResult,
-      documentationResult,
-      hiredResult,
-      recentProcessesResult,
-      pendingDocumentsResult,
-      historyResult,
-    ] = await Promise.all([
-      supabase
-        .from('recruitment_processes')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .in('status', activeProcessStatuses),
-      supabase
-        .from('recruitment_processes')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .eq('status', 'interview'),
-      supabase
-        .from('candidate_documents')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .in('status', ['pending', 'request_again']),
-      supabase
-        .from('recruitment_processes')
-        .select('id', { count: 'exact', head: true })
-        .eq('organization_id', organizationId)
-        .eq('status', 'hired')
-        .gte('finished_at', monthStart.toISOString()),
-      supabase
-        .from('recruitment_processes')
-        .select('id, candidate_id, vacancy_id, status, started_at, updated_at')
-        .eq('organization_id', organizationId)
-        .order('updated_at', { ascending: false })
-        .limit(6),
-      supabase
-        .from('candidate_documents')
-        .select('id, candidate_id, document_type, status, original_name, created_at')
-        .eq('organization_id', organizationId)
-        .in('status', ['pending', 'request_again'])
-        .order('created_at', { ascending: true })
-        .limit(6),
-      supabase
-        .from('process_history')
-        .select('id, process_id, action, old_status, new_status, created_at')
-        .eq('organization_id', organizationId)
-        .order('created_at', { ascending: false })
-        .limit(8),
+    const [metrics, recentProcesses, pendingDocuments, history] = await Promise.all([
+      db.query(`
+        select
+          count(*) filter (where status = any($2::public.process_status[]))::int as "activeProcesses",
+          count(*) filter (where status = 'interview')::int as interviews,
+          (select count(*)::int from public.candidate_documents where organization_id = $1 and status = any($3::public.document_status[])) as "pendingDocuments",
+          count(*) filter (where status = 'hired' and finished_at >= $4)::int as "hiredThisMonth"
+        from public.recruitment_processes where organization_id = $1
+      `, [organizationId, activeProcessStatuses, ['pending', 'request_again'], monthStart.toISOString()]),
+      db.query(`
+        select p.id, p.candidate_id, p.vacancy_id, p.status, p.started_at, p.updated_at,
+          c.full_name as candidate_name, coalesce(v.title, 'Processo sem vaga') as vacancy_title
+        from public.recruitment_processes p
+        join public.candidates c on c.id = p.candidate_id and c.organization_id = p.organization_id
+        left join public.vacancies v on v.id = p.vacancy_id and v.organization_id = p.organization_id
+        where p.organization_id = $1 order by p.updated_at desc limit 6
+      `, [organizationId]),
+      db.query(`
+        select d.id, d.candidate_id, d.document_type, d.status, d.original_name, d.created_at,
+          c.full_name as candidate_name
+        from public.candidate_documents d
+        join public.candidates c on c.id = d.candidate_id and c.organization_id = d.organization_id
+        where d.organization_id = $1 and d.status = any($2::public.document_status[])
+        order by d.created_at asc limit 6
+      `, [organizationId, ['pending', 'request_again']]),
+      db.query(`
+        select h.id, h.process_id, h.action, h.old_status, h.new_status, h.created_at,
+          c.full_name as candidate_name
+        from public.process_history h
+        join public.recruitment_processes p on p.id = h.process_id and p.organization_id = h.organization_id
+        join public.candidates c on c.id = p.candidate_id and c.organization_id = p.organization_id
+        where h.organization_id = $1 order by h.created_at desc limit 8
+      `, [organizationId]),
     ]);
 
-    const firstError = [
-      activeResult.error,
-      interviewResult.error,
-      documentationResult.error,
-      hiredResult.error,
-      recentProcessesResult.error,
-      pendingDocumentsResult.error,
-      historyResult.error,
-    ].find(Boolean);
-
-    if (firstError) {
-      return supabaseErrorResponse(firstError);
-    }
-
-    const recentProcesses = (recentProcessesResult.data ?? []) as unknown as Array<{
-      id: string;
-      candidate_id: string;
-      vacancy_id: string | null;
-      status: string;
-      started_at: string;
-      updated_at: string;
-    }>;
-    const pendingDocuments = (pendingDocumentsResult.data ?? []) as unknown as Array<{
-      id: string;
-      candidate_id: string;
-      document_type: string;
-      status: string;
-      original_name: string | null;
-      created_at: string;
-    }>;
-    const history = (historyResult.data ?? []) as unknown as Array<{
-      id: string;
-      process_id: string;
-      action: string;
-      old_status: string | null;
-      new_status: string | null;
-      created_at: string;
-    }>;
-
-    const candidateIds = [
-      ...new Set([
-        ...recentProcesses.map((process) => process.candidate_id),
-        ...pendingDocuments.map((document) => document.candidate_id),
-      ]),
-    ];
-    const vacancyIds = [
-      ...new Set(
-        recentProcesses
-          .map((process) => process.vacancy_id)
-          .filter((id): id is string => Boolean(id)),
-      ),
-    ];
-    const processIds = [...new Set(history.map((item) => item.process_id))];
-
-    const [candidateLookup, vacancyLookup, processLookup] = await Promise.all([
-      candidateIds.length
-        ? supabase
-            .from('candidates')
-            .select('id, full_name')
-            .eq('organization_id', organizationId)
-            .in('id', candidateIds)
-        : Promise.resolve({ data: [], error: null }),
-      vacancyIds.length
-        ? supabase
-            .from('vacancies')
-            .select('id, title')
-            .eq('organization_id', organizationId)
-            .in('id', vacancyIds)
-        : Promise.resolve({ data: [], error: null }),
-      processIds.length
-        ? supabase
-            .from('recruitment_processes')
-            .select('id, candidate_id')
-            .eq('organization_id', organizationId)
-            .in('id', processIds)
-        : Promise.resolve({ data: [], error: null }),
-    ]);
-
-    const lookupError = [candidateLookup.error, vacancyLookup.error, processLookup.error].find(
-      Boolean,
-    );
-    if (lookupError) {
-      return supabaseErrorResponse(lookupError);
-    }
-
-    const candidates = new Map(
-      ((candidateLookup.data ?? []) as unknown as Array<{ id: string; full_name: string }>).map(
-        (candidate) => [candidate.id, candidate.full_name],
-      ),
-    );
-    const vacancies = new Map(
-      ((vacancyLookup.data ?? []) as unknown as Array<{ id: string; title: string }>).map(
-        (vacancy) => [vacancy.id, vacancy.title],
-      ),
-    );
-    const processes = new Map(
-      ((processLookup.data ?? []) as unknown as Array<{ id: string; candidate_id: string }>).map(
-        (process) => [process.id, process.candidate_id],
-      ),
-    );
-
-    return json({
-      data: {
-        metrics: {
-          activeProcesses: activeResult.count ?? 0,
-          interviews: interviewResult.count ?? 0,
-          pendingDocuments: documentationResult.count ?? 0,
-          hiredThisMonth: hiredResult.count ?? 0,
-        },
-        recentProcesses: recentProcesses.map((process) => ({
-          ...process,
-          candidate_name: candidates.get(process.candidate_id) ?? 'Candidato não identificado',
-          vacancy_title: process.vacancy_id
-            ? vacancies.get(process.vacancy_id) ?? 'Vaga não identificada'
-            : 'Processo sem vaga',
-        })),
-        pendingDocuments: pendingDocuments.map((document) => ({
-          ...document,
-          candidate_name: candidates.get(document.candidate_id) ?? 'Candidato não identificado',
-        })),
-        activity: history.map((item) => {
-          const candidateId = processes.get(item.process_id);
-          return {
-            ...item,
-            candidate_name: candidateId
-              ? candidates.get(candidateId) ?? 'Candidato não identificado'
-              : 'Processo não identificado',
-          };
-        }),
-      },
-    });
+    return json({ data: { metrics: metrics[0] ?? { activeProcesses: 0, interviews: 0, pendingDocuments: 0, hiredThisMonth: 0 }, recentProcesses, pendingDocuments, activity: history } });
   } catch (error) {
-    return supabaseErrorResponse(error);
+    return databaseErrorResponse(error);
   }
 }

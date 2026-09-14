@@ -1,63 +1,43 @@
 import { getAuthenticatedClient } from '@/lib/api/auth';
-import { errorJson, json, supabaseErrorResponse } from '@/lib/api/http';
+import { databaseErrorResponse, errorJson, json } from '@/lib/api/http';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { supabase, userId, email } = await getAuthenticatedClient();
+    const { db, userId, email } = await getAuthenticatedClient();
     if (!userId) {
       return errorJson('É necessário estar autenticado.', 401);
     }
 
-    const [{ data: profileData, error: profileError }, { data: membershipData, error: membershipError }] =
-      await Promise.all([
-        supabase
-          .from('profiles')
-          .select('id, full_name, avatar_url')
-          .eq('id', userId)
-          .maybeSingle(),
-        supabase
-          .from('organization_members')
-          .select('organization_id, role')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: true })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+    const [profiles, memberships] = await Promise.all([
+      db`
+        select id, full_name, avatar_url
+        from public.profiles
+        where id = ${userId}
+        limit 1
+      `,
+      db`
+        select organization_id, role
+        from public.organization_members
+        where user_id = ${userId}
+        order by created_at asc
+        limit 1
+      `,
+    ]);
 
-    if (profileError || membershipError) {
-      return supabaseErrorResponse(profileError ?? membershipError);
-    }
-
-    const profile = profileData as unknown as {
-      id: string;
-      full_name: string;
-      avatar_url: string | null;
-    } | null;
-    const membership = membershipData as unknown as {
-      organization_id: string;
-      role: 'admin' | 'recruiter' | 'viewer';
-    } | null;
-
-    let organization: {
-      id: string;
-      name: string;
-      slug: string;
-    } | null = null;
+    const profile = profiles[0] ?? null;
+    const membership = memberships[0] ?? null;
+    let organization = null;
 
     if (membership) {
-      const { data: organizationData, error: organizationError } = await supabase
-        .from('organizations')
-        .select('id, name, slug')
-        .eq('id', membership.organization_id)
-        .single();
-
-      if (organizationError) {
-        return supabaseErrorResponse(organizationError);
-      }
-
-      organization = organizationData as unknown as typeof organization;
+      const organizations = await db`
+        select id, name, slug
+        from public.organizations
+        where id = ${membership.organization_id}::uuid
+        limit 1
+      `;
+      organization = organizations[0] ?? null;
     }
 
     return json({
@@ -69,6 +49,6 @@ export async function GET() {
       },
     });
   } catch (error) {
-    return supabaseErrorResponse(error);
+    return databaseErrorResponse(error);
   }
 }

@@ -3,17 +3,18 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const hasSupabaseConfig = Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  const hasNeonConfig = Boolean(
+    process.env.DATABASE_URL &&
+      process.env.NEON_AUTH_BASE_URL &&
+      process.env.NEON_AUTH_COOKIE_SECRET,
   );
 
   return NextResponse.json(
     {
-      ok: hasSupabaseConfig,
+      ok: hasNeonConfig,
       service: 'vieira-couto-rh',
-      supabaseConfigured: hasSupabaseConfig,
+      neonConfigured: hasNeonConfig,
     },
-    { status: hasSupabaseConfig ? 200 : 503 },
+    { status: hasNeonConfig ? 200 : 503 },
   );
 }

@@ -1,5 +1,5 @@
 import { getAuthenticatedClient } from '@/lib/api/auth';
-import { errorJson, isRecord, json, supabaseErrorResponse } from '@/lib/api/http';
+import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -22,28 +22,20 @@ export async function POST(request: NextRequest) {
       return errorJson('O nome deve ter entre 2 e 120 caracteres.', 400);
     }
 
-    const { supabase, userId, email } = await getAuthenticatedClient();
+    const { db, userId, email } = await getAuthenticatedClient();
     if (!userId) {
       return errorJson('É necessário estar autenticado.', 401);
     }
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .upsert({ id: userId, full_name: fullName }, { onConflict: 'id' })
-      .select('id, full_name, avatar_url')
-      .single();
+    const rows = await db`
+      insert into public.profiles (id, full_name)
+      values (${userId}, ${fullName})
+      on conflict (id) do update set full_name = excluded.full_name
+      returning id, full_name, avatar_url
+    `;
 
-    if (error) {
-      return supabaseErrorResponse(error);
-    }
-
-    return json({
-      data: {
-        profile: data,
-        user: { id: userId, email },
-      },
-    });
+    return json({ data: { profile: rows[0], user: { id: userId, email } } });
   } catch (error) {
-    return supabaseErrorResponse(error);
+    return databaseErrorResponse(error);
   }
 }

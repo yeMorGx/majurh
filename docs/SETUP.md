@@ -3,65 +3,55 @@
 ## Pré-requisitos
 
 - Node.js 22 ou superior.
-- Um projeto Supabase local ou hospedado.
-- Um usuário criado no Supabase Auth.
+- Projeto Neon conectado ao projeto Vercel `majurh`.
+- Neon Auth habilitado no recurso do projeto.
+- Blob Store privado da Vercel conectado ao mesmo projeto para documentos.
 
 ## Variáveis locais
 
-Copie `.env.example` para `.env.local` e preencha:
+Copie `.env.example` para `.env.local` e preencha os valores fornecidos pela integração Neon/Vercel:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+DATABASE_URL=
+NEON_AUTH_BASE_URL=
+NEON_AUTH_COOKIE_SECRET=
+BLOB_READ_WRITE_TOKEN=
 ```
 
-Nunca use `service_role` no navegador ou em variáveis `NEXT_PUBLIC_`.
+O `NEON_AUTH_COOKIE_SECRET` deve ter pelo menos 32 caracteres e ser o mesmo em cada ambiente. Nunca publique `DATABASE_URL`, `NEON_AUTH_COOKIE_SECRET` ou `BLOB_READ_WRITE_TOKEN` no navegador, no Git ou em variáveis `NEXT_PUBLIC_`.
 
-## Banco local
+## Banco Neon
 
-Com a CLI do Supabase instalada, os comandos usuais são:
+A migração inicial está em `neon/migrations/0001_initial_schema.sql`. Execute o arquivo uma única vez no SQL Editor do Neon ou com uma ferramenta de migração conectada ao `DATABASE_URL`.
 
-```bash
-supabase start
-supabase db reset
-supabase db lint --local --fail-on error
-supabase test db
-```
+Ela cria:
 
-O reset aplica a migração inicial e o `supabase/seed.sql`, que cria uma organização e três vagas neutras para desenvolvimento. Usuários, perfis e membros não são criados automaticamente porque dependem da identidade do Auth.
+- organizações, perfis e membros;
+- vagas, candidatos, processos e histórico;
+- documentos e índices de busca;
+- gatilhos de atualização e normalização de CPF.
 
-Validação local já executada: lint sem erros e 24/24 testes SQL aprovados. Os testes cobrem schema, bucket privado, RLS por organização e permissões de admin/viewer.
+As consultas são executadas exclusivamente no servidor e cada rota valida o vínculo do usuário com a organização antes de ler ou alterar dados.
 
-## Primeiro acesso local
+## Neon Auth
 
-1. Inicie os serviços locais e crie um usuário pelo Auth/Studio do Supabase.
-2. Confirme o UUID desse usuário em `auth.users`.
-3. No SQL Editor local, associe a pessoa à organização seed:
+O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Vieira Couto RH.
 
-```sql
-insert into public.profiles (id, full_name)
-select id, 'Dora RH'
-from auth.users
-where email = 'seu-email@exemplo.com'
-on conflict (id) do update set full_name = excluded.full_name;
+Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo fluxo de cadastro ou recuperação do provedor.
 
-insert into public.organization_members (organization_id, user_id, role)
-select organization.id, auth_user.id, 'admin'::public.app_role
-from public.organizations organization
-cross join auth.users auth_user
-where organization.slug = 'vieira-couto-demo'
-  and auth_user.email = 'seu-email@exemplo.com'
-on conflict (organization_id, user_id) do update set role = excluded.role;
-```
+## Blob privado
+
+Documentos sensíveis usam Blob privado da Vercel. A aplicação grava apenas o pathname no Postgres e entrega o arquivo por `/api/documents/[id]/file`, validando a sessão e o vínculo organizacional em cada requisição.
 
 ## Executar a aplicação
 
 ```bash
 npm install
+npm run typecheck
 npm run dev
 ```
 
-Abra `http://127.0.0.1:3000/login`. As rotas internas renovam a sessão via `proxy.ts` e as consultas usam o cliente SSR do Supabase.
+Abra `http://127.0.0.1:3000/login`.
 
 ## Deploy na Vercel
 
@@ -78,9 +68,16 @@ Sem essas variáveis, `/api/health` retorna `503` e as rotas internas redirecion
 
 ## Fluxo de demonstração
 
-1. Entrar com o usuário associado à organização.
-2. Cadastrar um candidato.
-3. Abrir o perfil e criar um processo.
-4. Alterar o status e conferir o histórico.
-5. Enviar um currículo ou documento de teste.
-6. Revisar o documento e voltar ao dashboard para ver a pendência atualizada.
+1. Entrar com um usuário do Neon Auth.
+2. Completar o perfil e criar a organização.
+3. Cadastrar um candidato.
+4. Abrir o perfil e criar um processo.
+5. Alterar o status e conferir o histórico.
+6. Enviar um currículo ou documento de teste.
+7. Revisar o documento e voltar ao dashboard.
+
+## Migração legada
+
+Os arquivos em `supabase/` foram mantidos como referência histórica nesta etapa. Eles não são importados pela aplicação e os pacotes Supabase foram removidos do runtime. Só remova as migrações legadas depois de confirmar que nenhum dado precisa ser exportado do projeto antigo.
+
+O backup de 09/09/2026 foi importado seletivamente no Neon: 1 organização, 3 perfis, 1 membro, 3 vagas, 1 candidato, 1 processo, 1 histórico e 1 documento. O PDF foi enviado para o Blob privado `vieira-couto-rh-documents`, e `candidate_documents.storage_path` aponta para o novo pathname. Os schemas internos `auth`, `storage` e `realtime` do Supabase não foram restaurados.

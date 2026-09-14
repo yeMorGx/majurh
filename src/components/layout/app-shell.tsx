@@ -1,6 +1,6 @@
 'use client';
 
-import { createClient } from '@/lib/supabase/client';
+import { authClient } from '@/lib/auth/client';
 import { OrganizationOnboarding } from '@/components/organization/organization-onboarding';
 import { ProfileOnboarding } from '@/components/auth/profile-onboarding';
 import Link from 'next/link';
@@ -87,7 +87,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     try {
-      await createClient().auth.signOut();
+      await authClient.signOut();
     } finally {
       router.replace('/login');
       router.refresh();
