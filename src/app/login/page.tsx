@@ -5,6 +5,13 @@ import { authClient } from '@/lib/auth/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+function isVercelPreviewDeployment() {
+  if (typeof window === 'undefined') return false;
+
+  const hostname = window.location.hostname;
+  return hostname.endsWith('.vercel.app') && hostname !== 'majurh.vercel.app';
+}
+
 function authErrorMessage(mode: 'login' | 'signup', error: unknown) {
   const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
   const code = typeof details.code === 'string' ? details.code.toLowerCase() : '';
@@ -13,6 +20,10 @@ function authErrorMessage(mode: 'login' | 'signup', error: unknown) {
     : typeof details.message === 'string'
       ? details.message.toLowerCase()
       : '';
+
+  if (isVercelPreviewDeployment()) {
+    return 'Este link de preview está protegido pelo Vercel. Abra https://majurh.vercel.app para criar ou acessar sua conta.';
+  }
 
   if (code.includes('already') || message.includes('already registered') || message.includes('already exists')) {
     return 'Este e-mail já possui uma conta. Troque para “Já tenho uma conta? Entrar”.';
@@ -46,11 +57,13 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [configurationMissing, setConfigurationMissing] = useState(false);
+  const [previewDeployment, setPreviewDeployment] = useState(false);
 
   useEffect(() => {
     setConfigurationMissing(
       new URLSearchParams(window.location.search).get('configuration') === 'missing',
     );
+    setPreviewDeployment(isVercelPreviewDeployment());
   }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -85,6 +98,13 @@ export default function LoginPage() {
           {configurationMissing && (
             <div className="form-error" role="alert">
               O ambiente de produção ainda não está conectado ao Neon Auth. Configure as variáveis do Neon na Vercel e publique novamente.
+            </div>
+          )}
+          {previewDeployment && (
+            <div className="setup-callout" role="status">
+              <strong>Você está em um link de preview protegido.</strong>
+              <p>Para criar ou acessar sua conta, use o domínio oficial:</p>
+              <a className="text-link" href="https://majurh.vercel.app/login">Abrir majurh.vercel.app <Icon name="arrow-up-right" size={14} /></a>
             </div>
           )}
           <form className="login-form" onSubmit={handleSubmit}>
