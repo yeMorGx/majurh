@@ -1,5 +1,10 @@
 import { getAuthenticatedClient } from '@/lib/api/auth';
-import { databaseErrorResponse, errorJson, json } from '@/lib/api/http';
+import {
+  databaseErrorResponse,
+  errorJson,
+  isUndefinedColumnError,
+  json,
+} from '@/lib/api/http';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,13 +36,29 @@ export async function GET() {
     let organization = null;
 
     if (membership) {
-      const organizations = await db`
-        select id, name, slug, brand_logo_url, brand_primary_color, brand_accent_color
-        from public.organizations
-        where id = ${membership.organization_id}::uuid
-        limit 1
-      `;
-      organization = organizations[0] ?? null;
+      try {
+        const organizations = await db`
+          select id, name, slug, brand_logo_url, brand_primary_color, brand_accent_color
+          from public.organizations
+          where id = ${membership.organization_id}::uuid
+          limit 1
+        `;
+        organization = organizations[0] ?? null;
+      } catch (error) {
+        // Permite que deploys feitos antes da migração white-label continuem
+        // carregando o app. A identidade da plataforma será usada nesse caso.
+        if (!isUndefinedColumnError(error)) {
+          throw error;
+        }
+
+        const organizations = await db`
+          select id, name, slug
+          from public.organizations
+          where id = ${membership.organization_id}::uuid
+          limit 1
+        `;
+        organization = organizations[0] ?? null;
+      }
     }
 
     return json({

@@ -63,11 +63,22 @@ export function databaseErrorResponse(
     );
   }
 
+  if (code === '42703' || code === '42P01' || code === '42883') {
+    return errorJson(
+      'O banco ainda não está alinhado com esta versão do Majurh. Execute as migrações do Neon e tente novamente.',
+      503,
+    );
+  }
+
   if (isConfigurationError(error)) {
     return errorJson('O banco de dados não está configurado neste ambiente.', 503);
   }
 
   return errorJson('Não foi possível concluir a operação.', 500);
+}
+
+export function isUndefinedColumnError(error: unknown) {
+  return getErrorCode(error) === '42703';
 }
 
 function getErrorCode(error: unknown) {
