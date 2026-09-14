@@ -2,7 +2,7 @@
 
 import { Icon } from '@/components/ui/icon';
 import { authClient } from '@/lib/auth/client';
-import { getBrandStyle, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 
@@ -94,7 +94,7 @@ export default function LoginPage() {
     <main className="login-page" style={getBrandStyle(organization) as CSSProperties}>
       <section className="login-form-side">
         <div className="login-form-wrap">
-          <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src={organization?.brand_logo_url || platformBrand.logoPath} alt="" /></div><strong>{organization?.name || platformBrand.name}</strong></div>
+          <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src={getOrganizationAssetUrl(organization, 'logo') || platformBrand.logoPath} alt="" /></div><strong>{organization?.name || platformBrand.name}</strong></div>
           <p className="eyebrow">Acesso interno</p>
           <h1>Entrar no seu posto de controle.</h1>
           <p>{organization?.brand_login_description || platformBrand.description}</p>
@@ -120,13 +120,13 @@ export default function LoginPage() {
           <p className="login-access-note">Ainda não tem acesso? Solicite um convite ao administrador da sua organização.</p>
         </div>
       </section>
-      <aside className={`login-side-art ${organization?.brand_login_banner_url ? 'has-custom-banner' : ''}`} style={loginArtStyle(organization)}><div className="art-content"><span className="art-kicker">{organization?.brand_login_kicker || `${organization?.name || platformBrand.name} · B2B`}</span><h2>{organization?.brand_login_headline || 'O histórico certo para a próxima decisão.'}</h2><p>{organization?.brand_login_description || 'Uma visão calma do fluxo de pessoas, do primeiro contato à admissão.'}</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Candidato identificado</div><div className="art-step"><span className="art-step-dot" />Processo em andamento</div><div className="art-step"><span className="art-step-dot" />Próximo passo claro</div></div></div></aside>
+      <aside className={`login-side-art ${organization?.brand_login_banner_path ? 'has-custom-banner' : ''}`} style={loginArtStyle(organization)}><div className="art-content"><span className="art-kicker">{organization?.brand_login_kicker || `${organization?.name || platformBrand.name} · B2B`}</span><h2>{organization?.brand_login_headline || 'O histórico certo para a próxima decisão.'}</h2><p>{organization?.brand_login_description || 'Uma visão calma do fluxo de pessoas, do primeiro contato à admissão.'}</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Candidato identificado</div><div className="art-step"><span className="art-step-dot" />Processo em andamento</div><div className="art-step"><span className="art-step-dot" />Próximo passo claro</div></div></div></aside>
     </main>
   );
 }
 
 function loginArtStyle(organization: OrganizationBrand | null): CSSProperties {
-  const banner = organization?.brand_login_banner_url;
+  const banner = getOrganizationAssetUrl(organization, 'login-banner');
   if (!banner) return {};
   const safeBanner = banner.replace(/"/g, '');
   return {

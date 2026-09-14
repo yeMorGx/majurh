@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon, type IconName } from '@/components/ui/icon';
-import { getBrandStyle, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
 
 type Profile = {
   id: string;
@@ -94,7 +94,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     .toUpperCase();
   const brandName = me?.organization?.name || platformBrand.name;
   const brandDescriptor = me?.organization ? `Powered by ${platformBrand.name}` : platformBrand.descriptor;
-  const brandLogo = me?.organization?.brand_logo_url || platformBrand.logoPath;
+  const brandLogo = getOrganizationAssetUrl(me?.organization, 'logo') || platformBrand.logoPath;
   const brandStyle = getBrandStyle(me?.organization);
 
   useEffect(() => {

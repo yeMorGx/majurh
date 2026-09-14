@@ -9,10 +9,10 @@ export type OrganizationBrand = {
   id: string;
   name: string;
   slug: string;
-  brand_logo_url?: string | null;
+  brand_logo_path?: string | null;
   brand_primary_color?: string | null;
   brand_accent_color?: string | null;
-  brand_login_banner_url?: string | null;
+  brand_login_banner_path?: string | null;
   brand_login_kicker?: string | null;
   brand_login_headline?: string | null;
   brand_login_description?: string | null;
@@ -45,8 +45,9 @@ export function normalizeHex(value: string | null | undefined) {
     : null;
 }
 
-export function isSafeAssetUrl(value: string) {
-  return (value.startsWith('/') && !value.startsWith('//') && !value.includes('..')) || /^https:\/\/[^\s]+$/i.test(value);
+export function getOrganizationAssetUrl(organization: OrganizationBrand | null | undefined, kind: 'logo' | 'login-banner') {
+  const hasAsset = kind === 'logo' ? organization?.brand_logo_path : organization?.brand_login_banner_path;
+  return hasAsset && organization?.id
+    ? `/api/branding/assets/${organization.id}/${kind}`
+    : null;
 }
-
-export const isSafeLogoUrl = isSafeAssetUrl;

@@ -38,8 +38,8 @@ export async function GET() {
     if (membership) {
       try {
         const organizations = await db`
-          select id, name, slug, brand_logo_url, brand_primary_color, brand_accent_color,
-            brand_login_banner_url, brand_login_kicker, brand_login_headline, brand_login_description
+          select id, name, slug, brand_logo_path, brand_primary_color, brand_accent_color,
+            brand_login_banner_path, brand_login_kicker, brand_login_headline, brand_login_description
           from public.organizations
           where id = ${membership.organization_id}::uuid
           limit 1

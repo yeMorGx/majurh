@@ -1,6 +1,6 @@
 import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
 import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
-import { isSafeLogoUrl, normalizeHex } from '@/lib/branding';
+import { normalizeHex } from '@/lib/branding';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -31,17 +31,9 @@ export async function PATCH(request: NextRequest) {
       return errorJson('O nome da organização deve ter entre 2 e 120 caracteres.', 400);
     }
 
-    const logoValue = readNullableString(body.brandLogoUrl);
-    if (logoValue === 'invalid') return errorJson('Informe uma URL de logo válida ou deixe o campo vazio.', 400);
-    if (logoValue && !isSafeLogoUrl(logoValue)) return errorJson('A logo deve usar um caminho local ou uma URL HTTPS.', 400);
-
     const primaryColor = readNullableHex(body.brandPrimaryColor);
     const accentColor = readNullableHex(body.brandAccentColor);
     if (primaryColor === 'invalid' || accentColor === 'invalid') return errorJson('As cores devem estar no formato hexadecimal, por exemplo #0f4d3a.', 400);
-
-    const bannerUrl = readNullableString(body.brandLoginBannerUrl);
-    if (bannerUrl === 'invalid') return errorJson('Informe uma URL de banner válida ou deixe o campo vazio.', 400);
-    if (bannerUrl && !isSafeLogoUrl(bannerUrl)) return errorJson('O banner deve usar um caminho local ou uma URL HTTPS.', 400);
 
     const loginKicker = readLimitedString(body.brandLoginKicker, 80);
     const loginHeadline = readLimitedString(body.brandLoginHeadline, 140);
@@ -58,16 +50,14 @@ export async function PATCH(request: NextRequest) {
     const rows = await db`
       update public.organizations
       set name = ${name},
-        brand_logo_url = ${logoValue || null},
         brand_primary_color = ${primaryColor || null},
         brand_accent_color = ${accentColor || null},
-        brand_login_banner_url = ${bannerUrl || null},
         brand_login_kicker = ${loginKicker || null},
         brand_login_headline = ${loginHeadline || null},
         brand_login_description = ${loginDescription || null}
       where id = ${organizationId}::uuid
-      returning id, name, slug, brand_logo_url, brand_primary_color, brand_accent_color,
-        brand_login_banner_url, brand_login_kicker, brand_login_headline, brand_login_description
+      returning id, name, slug, brand_logo_path, brand_primary_color, brand_accent_color,
+        brand_login_banner_path, brand_login_kicker, brand_login_headline, brand_login_description
     `;
     if (!rows.length) return errorJson('Organização não encontrada.', 404);
 

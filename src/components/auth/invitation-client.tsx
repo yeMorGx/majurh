@@ -2,7 +2,7 @@
 
 import { Icon } from '@/components/ui/icon';
 import { authClient } from '@/lib/auth/client';
-import { getBrandStyle, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 
@@ -74,7 +74,7 @@ export function InvitationClient({ token }: { token: string }) {
   return (
     <main className="login-page invitation-page" style={getBrandStyle(brand) as CSSProperties}>
       <section className="login-form-side"><div className="login-form-wrap">
-        <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src={brand.brand_logo_url || platformBrand.logoPath} alt="" /></div><strong>{brand.name}</strong></div>
+        <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src={getOrganizationAssetUrl(brand, 'logo') || platformBrand.logoPath} alt="" /></div><strong>{brand.name}</strong></div>
         <p className="eyebrow">Convite de acesso</p>
         <h1>Entre no espaço da sua equipe.</h1>
         <p>Crie seu acesso para trabalhar com candidatos, processos e documentos em {brand.name}.</p>
@@ -87,7 +87,7 @@ export function InvitationClient({ token }: { token: string }) {
         </form>
         <button type="button" className="login-mode-toggle" onClick={() => { setMode(mode === 'signup' ? 'login' : 'signup'); setError(''); }}>{mode === 'signup' ? 'Já tenho uma conta? Entrar' : 'Ainda não tenho senha? Criar acesso'}</button>
       </div></section>
-      <aside className={`login-side-art ${brand.brand_login_banner_url ? 'has-custom-banner' : ''}`} style={loginArtStyle(brand)}><div className="art-content"><span className="art-kicker">{brand.brand_login_kicker || `${brand.name} · B2B`}</span><h2>{brand.brand_login_headline || 'Um espaço criado para trabalhar em equipe.'}</h2><p>{brand.brand_login_description || 'Acesso organizado, contexto compartilhado e próximos passos claros.'}</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Convite validado</div><div className="art-step"><span className="art-step-dot" />Perfil conectado</div><div className="art-step"><span className="art-step-dot" />Equipe pronta</div></div></div></aside>
+      <aside className={`login-side-art ${brand.brand_login_banner_path ? 'has-custom-banner' : ''}`} style={loginArtStyle(brand)}><div className="art-content"><span className="art-kicker">{brand.brand_login_kicker || `${brand.name} · B2B`}</span><h2>{brand.brand_login_headline || 'Um espaço criado para trabalhar em equipe.'}</h2><p>{brand.brand_login_description || 'Acesso organizado, contexto compartilhado e próximos passos claros.'}</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Convite validado</div><div className="art-step"><span className="art-step-dot" />Perfil conectado</div><div className="art-step"><span className="art-step-dot" />Equipe pronta</div></div></div></aside>
     </main>
   );
 }
@@ -103,7 +103,7 @@ function authErrorMessage(error: unknown, mode: 'signup' | 'login') {
   return mode === 'signup' ? 'Não foi possível criar seu acesso. Tente novamente.' : 'Não foi possível entrar com este convite.';
 }
 function loginArtStyle(organization: OrganizationBrand): CSSProperties {
-  const banner = organization.brand_login_banner_url;
+  const banner = getOrganizationAssetUrl(organization, 'login-banner');
   if (!banner) return {};
   return { backgroundImage: `linear-gradient(180deg, rgba(15, 77, 58, 0.2), rgba(15, 77, 58, 0.82)), url("${banner.replace(/"/g, '')}")`, backgroundPosition: 'center', backgroundSize: 'cover' };
 }

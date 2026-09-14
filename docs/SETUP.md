@@ -9,9 +9,9 @@
 
 ## White-label B2B
 
-Majurh é a marca principal da plataforma. Administradores podem abrir **Organização** para definir o nome exibido, uma logo por URL HTTPS, as cores principal/de destaque e o conteúdo visual da tela de login: banner, texto de apoio, título e descrição. O nome e a logo também atualizam o título da aba e o favicon após o carregamento do tenant. Os valores são opcionais: quando ficam vazios, a interface usa a identidade padrão do Majurh. A tela pública usa a identidade quando aberta como `/login?org=slug`.
+Majurh é a marca principal da plataforma. Administradores podem abrir **Organização** para definir o nome exibido, enviar um arquivo de logo, escolher as cores principal/de destaque e enviar o banner da tela de login. Também é possível editar o texto de apoio, título e descrição. O nome e a logo atualizam o título da aba e o favicon após o carregamento do tenant. Os arquivos aceitos são PNG, JPG, WEBP ou SVG, com até 5 MB. A tela pública usa a identidade quando aberta como `/login?org=slug`.
 
-A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos da tela de login, o e-mail dos membros e a tabela de convites. Execute as duas migrações no banco Neon antes de usar o editor de marca e a administração de acessos em produção.
+A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. Execute as três migrações no banco Neon antes de usar o editor de marca e a administração de acessos em produção.
 
 ## Variáveis locais
 
