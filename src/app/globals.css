@@ -565,6 +565,21 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .tracker-card .button-secondary { border-color: rgba(255,255,255,0.2); background: transparent; color: white; }
 .tracker-side { min-height: 352px; }
 .tracker-side .form-select { width: 100%; }
+.tracker-overlay { position: fixed; right: 24px; bottom: 24px; z-index: 80; display: flex; align-items: center; gap: 12px; width: min(360px, calc(100vw - 32px)); min-height: 76px; padding: 12px 34px 12px 14px; overflow: hidden; border: 1px solid rgba(221,243,233,0.28); border-radius: 24px 0 24px 24px; background: var(--vc-forest); color: white; box-shadow: 0 18px 44px rgba(16,35,27,0.24); animation: tracker-overlay-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.tracker-overlay::after { content: ''; position: absolute; top: -1px; right: -1px; width: 29px; height: 29px; background: var(--vc-shell); border-radius: 0 0 0 29px; pointer-events: none; }
+@keyframes tracker-overlay-in { from { opacity: 0; transform: translateY(12px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.tracker-overlay-mark { position: relative; z-index: 1; width: 30px; height: 30px; flex: 0 0 30px; display: grid; place-items: center; border: 1px solid rgba(246,199,109,0.5); border-radius: 50%; background: rgba(246,199,109,0.12); }
+.tracker-overlay-mark::before { content: ''; position: absolute; inset: 5px; border: 1px solid rgba(246,199,109,0.28); border-radius: 50%; }
+.tracker-overlay-mark i { width: 6px; height: 6px; border-radius: 50%; background: #f6c76d; box-shadow: 0 0 0 4px rgba(246,199,109,0.14); animation: tracker-pulse 1.4s ease-in-out infinite; }
+.tracker-overlay-copy { position: relative; z-index: 1; min-width: 0; flex: 1; display: grid; gap: 1px; }
+.tracker-overlay-copy span { color: var(--vc-mint); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.tracker-overlay-copy strong { font-family: var(--font-mono); font-size: 24px; line-height: 1.05; letter-spacing: -0.07em; }
+.tracker-overlay-copy small { overflow: hidden; color: rgba(255,255,255,0.66); font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+.tracker-overlay-actions { position: relative; z-index: 1; display: flex; gap: 6px; }
+.tracker-overlay-button { width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid rgba(255,255,255,0.2); border-radius: 50%; background: rgba(255,255,255,0.08); color: white; }
+.tracker-overlay-button:hover { background: rgba(255,255,255,0.16); }
+.tracker-overlay-button-primary { border-color: white; background: white; color: var(--vc-forest); }
+.tracker-overlay-button-primary:hover { background: var(--vc-mint); }
 .tracker-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 28px; padding-top: 17px; border-top: 1px solid var(--vc-border); }
 .tracker-stats span, .tracker-stats strong { display: block; }
 .tracker-stats span { color: var(--vc-muted); font-size: 10px; }
@@ -638,10 +653,11 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .productivity-principle { align-items: flex-start; flex-wrap: wrap; }.productivity-principle .button { margin-left: 56px; }
   .calendar-sidebar { grid-template-columns: 1fr; }.calendar-cell { min-height: 70px; padding: 5px; }.calendar-event { font-size: 8px; }.calendar-weekdays span { font-size: 9px; }
   .task-panel-header { display: block; }.progress-track { width: 100%; margin: 13px 0 0; }.todo-list { padding-left: 16px; padding-right: 16px; }.task-filters { padding-left: 16px; padding-right: 16px; overflow-x: auto; }
+  .tracker-overlay { right: 16px; bottom: 16px; }
 }
 
 @media (max-width: 430px) {
-  .productivity-shortcuts { grid-template-columns: 1fr; }.focus-card, .productivity-summary-card, .task-side-panel, .tracker-card, .tracker-side { padding: 18px; }.productivity-principle { padding: 18px; }.productivity-principle .button { margin-left: 0; }.tracker-clock { font-size: 54px; }.calendar-panel { padding: 10px; }.calendar-cell { min-height: 62px; }.calendar-event { display: none; }.calendar-cell.is-selected .calendar-event:first-of-type, .calendar-cell.is-today .calendar-event:first-of-type { display: block; }.calendar-more { font-size: 8px; }
+  .productivity-shortcuts { grid-template-columns: 1fr; }.focus-card, .productivity-summary-card, .task-side-panel, .tracker-card, .tracker-side { padding: 18px; }.productivity-principle { padding: 18px; }.productivity-principle .button { margin-left: 0; }.tracker-clock { font-size: 54px; }.tracker-overlay { right: 12px; bottom: 12px; width: calc(100vw - 24px); min-height: 68px; padding: 10px 29px 10px 12px; }.tracker-overlay-copy strong { font-size: 22px; }.tracker-overlay-button { width: 30px; height: 30px; }.calendar-panel { padding: 10px; }.calendar-cell { min-height: 62px; }.calendar-event { display: none; }.calendar-cell.is-selected .calendar-event:first-of-type, .calendar-cell.is-today .calendar-event:first-of-type { display: block; }.calendar-more { font-size: 8px; }
 }
 
 /* O brainstorm é um canvas livre: as notas não representam etapas. */
