@@ -13,7 +13,7 @@ Validações executadas:
 - `npm run typecheck` — aprovado.
 - `npm run build` — aprovado com variáveis de build temporárias.
 
-Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
+Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O domínio oficial `https://majurh.vercel.app` também foi cadastrado como origem confiável no Neon Auth. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
 
 Pendência operacional: criar novamente no Neon Auth as contas que precisam acessar o sistema. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
 

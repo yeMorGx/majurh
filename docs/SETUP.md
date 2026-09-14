@@ -39,6 +39,8 @@ O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam 
 
 Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo fluxo de cadastro ou recuperação do provedor.
 
+Em **Auth → Configuration → Domains** do branch principal, mantenha `https://majurh.vercel.app` como domínio confiável. O Neon Auth rejeita requisições de origens não cadastradas com `403 Invalid origin`. Links individuais de preview da Vercel podem permanecer protegidos e não devem ser usados para o cadastro de usuários.
+
 ## Blob privado
 
 Documentos sensíveis usam Blob privado da Vercel. A aplicação grava apenas o pathname no Postgres e entrega o arquivo por `/api/documents/[id]/file`, validando a sessão e o vínculo organizacional em cada requisição.
@@ -55,16 +57,18 @@ Abra `http://127.0.0.1:3000/login`.
 
 ## Deploy na Vercel
 
-No projeto da Vercel, abra **Settings → Environment Variables** e cadastre estas duas variáveis para o ambiente **Production** (e também **Preview**, se necessário):
+No projeto da Vercel, abra **Settings → Environment Variables** e confira estas variáveis nos ambientes usados:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sua-chave-publishable
+DATABASE_URL=postgresql://...
+NEON_AUTH_BASE_URL=https://...neonauth.../neondb/auth
+NEON_AUTH_COOKIE_SECRET=um-segredo-com-pelo-menos-32-caracteres
+BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...
 ```
 
-Depois de salvar, faça um novo deploy. Não use `service_role` ou outra chave secreta em uma variável `NEXT_PUBLIC_`.
+Depois de salvar, faça um novo deploy. Não use chaves secretas em variáveis `NEXT_PUBLIC_`.
 
-Sem essas variáveis, `/api/health` retorna `503` e as rotas internas redirecionam para o login com uma mensagem de configuração, em vez de exibir um erro interno genérico.
+Sem essas variáveis, `/api/health` retorna `503` e as rotas internas exibem uma mensagem de configuração, em vez de um erro interno genérico.
 
 ## Fluxo de demonstração
 
