@@ -28,6 +28,7 @@ const navItems: Array<{ href: string; label: string; icon: IconName }> = [
   { href: '/candidatos', label: 'Candidatos', icon: 'users' },
   { href: '/processos', label: 'Processos', icon: 'git-branch' },
   { href: '/documentos', label: 'Documentos', icon: 'file-check' },
+  { href: '/produtividade', label: 'Produtividade', icon: 'kanban' },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {

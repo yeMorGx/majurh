@@ -462,3 +462,27 @@ Componentes prioritários:
 - [Neon Serverless Driver](https://neon.tech/docs/serverless/serverless-driver)
 - [Integração Neon na Vercel](https://vercel.com/integrations/neon)
 - [Vercel Blob privado](https://vercel.com/docs/vercel-blob/private-storage)
+
+## 13. Módulo de produtividade
+
+A rota `/produtividade` concentra as ferramentas de trabalho diário do time de RH:
+
+- **Kanban:** cards em `A fazer`, `Em andamento` e `Concluído`, com criação rápida e arrastar-e-soltar.
+- **TO-DO:** lista de ações com conclusão, prioridade e filtros por hoje ou prioridade alta.
+- **Time tracker:** sessão de foco vinculada a uma tarefa, com iniciar, pausar e zerar.
+- **Calendário:** grade mensal, seleção de dia, criação de compromissos e indicação de origem local.
+- **Brainstorm:** quadro de notas em `Ideias soltas`, `Dar forma` e `Próximo passo`.
+
+Nesta primeira camada, os dados dessas ferramentas são persistidos no `localStorage` do navegador para permitir validação rápida do fluxo sem colocar dados de produtividade em tabelas antes de fechar o modelo de colaboração. A próxima etapa deve migrar os itens para o Neon por organização e usuário, registrar histórico de movimentações e substituir o armazenamento local por APIs autenticadas.
+
+O calendário já tem uma interface própria alinhada aos tokens do produto. A integração com Google Calendar e Outlook deve ser implementada por OAuth no servidor, com tokens criptografados e escopo mínimo. Os botões atuais deixam explícita essa preparação e não tentam autenticar sem as credenciais da organização. O [CalendarJS](https://calendarjs.com/) pode ser avaliado como camada de agenda/timeline na etapa de sincronização, mantendo o tema visual do Vieira Couto RH.
+
+### Critérios de aceite da camada visual
+
+- [ ] A navegação lateral abre `/produtividade` e mantém o estado ativo.
+- [ ] Cards e ideias podem ser movidos entre colunas com mouse.
+- [ ] Tarefas, eventos e ideias podem ser criados e persistem após recarregar a página no mesmo navegador.
+- [ ] Timer inicia, pausa e atualiza o tempo em tempo real.
+- [ ] Calendário permite navegar entre meses e criar evento no dia escolhido.
+- [ ] A tela funciona em desktop e mobile, com foco visível e redução de movimento respeitada.
+- [ ] Google e Outlook só são considerados concluídos após OAuth, sincronização incremental, revogação e tratamento de conflitos testados.

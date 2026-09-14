@@ -80,6 +80,12 @@ Sem essas variáveis, `/api/health` retorna `503` e as rotas internas exibem uma
 6. Enviar um currículo ou documento de teste.
 7. Revisar o documento e voltar ao dashboard.
 
+## Produtividade
+
+O workspace também possui a área `/produtividade`, com Kanban, TO-DO, time tracker, calendário mensal e quadro de brainstorm. Nesta entrega, o módulo funciona localmente e salva cards, tarefas, compromissos e ideias no armazenamento do navegador. Isso permite testar a experiência sem criar registros compartilhados no banco.
+
+Os botões de Google Calendar e Outlook estão visíveis como preparação de integração. Para ativá-los em produção será necessário configurar OAuth no servidor, armazenar tokens com segurança por organização e implementar sincronização incremental. Não coloque client secrets nem tokens de calendário em variáveis `NEXT_PUBLIC_` ou no navegador.
+
 ## Migração legada
 
 Os arquivos em `supabase/` foram mantidos como referência histórica nesta etapa. Eles não são importados pela aplicação e os pacotes Supabase foram removidos do runtime. Só remova as migrações legadas depois de confirmar que nenhum dado precisa ser exportado do projeto antigo.
