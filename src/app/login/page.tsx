@@ -5,6 +5,38 @@ import { authClient } from '@/lib/auth/client';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+function authErrorMessage(mode: 'login' | 'signup', error: unknown) {
+  const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
+  const code = typeof details.code === 'string' ? details.code.toLowerCase() : '';
+  const message = error instanceof Error
+    ? error.message.toLowerCase()
+    : typeof details.message === 'string'
+      ? details.message.toLowerCase()
+      : '';
+
+  if (code.includes('already') || message.includes('already registered') || message.includes('already exists')) {
+    return 'Este e-mail já possui uma conta. Troque para “Já tenho uma conta? Entrar”.';
+  }
+
+  if (code.includes('invalid_email') || message.includes('invalid email')) {
+    return 'Informe um e-mail válido.';
+  }
+
+  const weakPassword = code.includes('password') && (code.includes('short') || code.includes('weak'))
+    || message.includes('password') && (message.includes('short') || message.includes('weak') || message.includes('security'));
+  if (weakPassword) {
+    return 'A senha precisa ter pelo menos 8 caracteres e atender aos requisitos de segurança.';
+  }
+
+  if (code.includes('email_not_confirmed') || message.includes('verification required') || message.includes('email not confirmed')) {
+    return 'Confirme seu e-mail antes de entrar. Verifique também a caixa de spam.';
+  }
+
+  return mode === 'login'
+    ? 'Não foi possível entrar. Confira seu e-mail e senha.'
+    : 'Não foi possível criar o acesso agora. Tente novamente em instantes.';
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -30,13 +62,13 @@ export default function LoginPage() {
         ? await authClient.signIn.email({ email, password })
         : await authClient.signUp.email({ email, password, name: fullName });
       if (result.error) {
-        setError(mode === 'login' ? 'Não foi possível entrar. Confira seu e-mail e senha.' : 'Não foi possível criar o acesso. Confira os dados e tente novamente.');
+        setError(authErrorMessage(mode, result.error));
         return;
       }
       router.replace('/dashboard');
       router.refresh();
     } catch (loginError) {
-      setError(loginError instanceof Error && loginError.message.includes('Variável de ambiente') ? 'O Neon Auth ainda não está configurado neste ambiente.' : 'Não foi possível entrar agora. Tente novamente.');
+      setError(loginError instanceof Error && loginError.message.includes('Variável de ambiente') ? 'O Neon Auth ainda não está configurado neste ambiente.' : authErrorMessage(mode, loginError));
     } finally {
       setLoading(false);
     }
@@ -52,7 +84,7 @@ export default function LoginPage() {
           <p>Organize candidatos, processos e documentos em um só lugar.</p>
           {configurationMissing && (
             <div className="form-error" role="alert">
-              O ambiente de produção ainda não está conectado ao Supabase. Configure as variáveis do Supabase na Vercel e publique novamente.
+              O ambiente de produção ainda não está conectado ao Neon Auth. Configure as variáveis do Neon na Vercel e publique novamente.
             </div>
           )}
           <form className="login-form" onSubmit={handleSubmit}>
