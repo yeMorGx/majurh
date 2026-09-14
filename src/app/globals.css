@@ -621,3 +621,28 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 @media (max-width: 430px) {
   .productivity-shortcuts { grid-template-columns: 1fr; }.focus-card, .productivity-summary-card, .task-side-panel, .tracker-card, .tracker-side { padding: 18px; }.productivity-principle { padding: 18px; }.productivity-principle .button { margin-left: 0; }.tracker-clock { font-size: 54px; }.calendar-panel { padding: 10px; }.calendar-cell { min-height: 62px; }.calendar-event { display: none; }.calendar-cell.is-selected .calendar-event:first-of-type, .calendar-cell.is-today .calendar-event:first-of-type { display: block; }.calendar-more { font-size: 8px; }
 }
+
+/* O brainstorm é um canvas livre: as notas não representam etapas. */
+.idea-board-shell { overflow: hidden; border: 1px solid var(--vc-border); border-radius: 16px; background: white; box-shadow: var(--shadow-card); }
+.idea-board-toolbar { display: flex; align-items: center; gap: 16px; min-height: 48px; padding: 0 15px; border-bottom: 1px solid var(--vc-border); background: #fcfdfc; }
+.idea-canvas-label { display: inline-flex; align-items: center; gap: 7px; color: var(--vc-forest); font-size: 11px; font-weight: 700; }
+.idea-canvas-label i { width: 7px; height: 7px; border-radius: 50%; background: var(--vc-green); box-shadow: 0 0 0 4px var(--vc-mint); }
+.idea-board-help { color: var(--vc-muted); font-size: 11px; }
+.idea-board-count { margin-left: auto; color: var(--vc-muted); font-family: var(--font-mono); font-size: 10px; }
+.idea-canvas { position: relative; min-height: 560px; overflow: hidden; background-color: #fbfcfb; background-image: radial-gradient(circle, rgba(113,129,122,0.2) 1px, transparent 1px); background-size: 22px 22px; }
+.idea-canvas::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(135deg, rgba(221,243,233,0.24), transparent 34%, rgba(255,243,214,0.2)); }
+.idea-empty { position: absolute; z-index: 1; top: 50%; left: 50%; width: min(360px, calc(100% - 40px)); transform: translate(-50%, -50%); text-align: center; }
+.idea-empty-icon { width: 44px; height: 44px; display: grid; place-items: center; margin: 0 auto 14px; border-radius: 14px; background: var(--vc-warning-soft); color: var(--vc-warning); }
+.idea-empty h3 { margin: 0; font-family: var(--font-display); font-size: 20px; letter-spacing: -0.045em; }
+.idea-empty p { margin: 7px 0 18px; color: var(--vc-muted); font-size: 12px; line-height: 1.5; }
+.idea-empty .button { margin: 0 auto; }
+.idea-canvas > .idea-note { position: absolute; z-index: 2; width: 220px; min-height: 146px; padding: 16px; border-radius: 3px 13px 13px 13px; cursor: grab; user-select: none; touch-action: none; }
+.idea-canvas > .idea-note:hover { z-index: 3; }
+.idea-canvas > .idea-note:focus-visible { outline: 2px solid var(--vc-forest); outline-offset: 4px; }
+.idea-canvas > .idea-note.is-dragging { z-index: 4; cursor: grabbing; box-shadow: 0 16px 28px rgba(16,35,27,0.16); }
+.idea-canvas > .idea-note h3 { margin-top: 18px; }
+.idea-canvas > .idea-note p { min-height: 0; }
+
+@media (max-width: 720px) {
+  .idea-board-toolbar { gap: 10px; padding: 0 12px; }.idea-board-help { display: none; }.idea-canvas { min-height: 500px; }.idea-canvas > .idea-note { width: 190px; min-height: 136px; }
+}

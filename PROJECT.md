@@ -471,7 +471,7 @@ A rota `/produtividade` concentra as ferramentas de trabalho diário do time de 
 - **TO-DO:** lista de ações com conclusão, prioridade e filtros por hoje ou prioridade alta.
 - **Time tracker:** sessão de foco vinculada a uma tarefa, com iniciar, pausar e zerar.
 - **Calendário:** grade mensal, seleção de dia, criação de compromissos e indicação de origem local.
-- **Brainstorm:** quadro de notas em `Ideias soltas`, `Dar forma` e `Próximo passo`.
+- **Brainstorm:** canvas livre no estilo Miro, com notas posicionáveis em duas dimensões e sem colunas de fluxo.
 
 Nesta primeira camada, os dados dessas ferramentas são persistidos no `localStorage` do navegador para permitir validação rápida do fluxo sem colocar dados de produtividade em tabelas antes de fechar o modelo de colaboração. A próxima etapa deve migrar os itens para o Neon por organização e usuário, registrar histórico de movimentações e substituir o armazenamento local por APIs autenticadas.
 
@@ -480,8 +480,9 @@ O calendário já tem uma interface própria alinhada aos tokens do produto. A i
 ### Critérios de aceite da camada visual
 
 - [ ] A navegação lateral abre `/produtividade` e mantém o estado ativo.
-- [ ] Cards e ideias podem ser movidos entre colunas com mouse.
-- [ ] Tarefas, eventos e ideias podem ser criados e persistem após recarregar a página no mesmo navegador.
+- [ ] Cards do Kanban podem ser movidos entre colunas com mouse.
+- [ ] Tarefas, eventos e notas do canvas podem ser criados e persistem após recarregar a página no mesmo navegador.
+- [ ] Brainstorm permite posicionar notas livremente no canvas, sem transformar ideias em etapas.
 - [ ] Timer inicia, pausa e atualiza o tempo em tempo real.
 - [ ] Calendário permite navegar entre meses e criar evento no dia escolhido.
 - [ ] A tela funciona em desktop e mobile, com foco visível e redução de movimento respeitada.
