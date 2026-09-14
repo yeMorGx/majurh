@@ -13,6 +13,7 @@ export type IconName =
   | 'file-check'
   | 'file-text'
   | 'git-branch'
+  | 'image'
   | 'kanban'
   | 'lightbulb'
   | 'list-checks'
@@ -67,6 +68,7 @@ export function Icon({ name, size = 18, strokeWidth = 1.8, className }: IconProp
     'file-check': <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="m8 15 2 2 4-4" /></>,
     'file-text': <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></>,
     'git-branch': <><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M6 9v1a8 8 0 0 0 8 8h1" /><circle cx="18" cy="6" r="3" /><path d="M18 9v3" /></>,
+    image: <><rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
     kanban: <><rect width="18" height="16" x="3" y="4" rx="2" /><path d="M9 4v9M15 4v5" /></>,
     lightbulb: <><path d="M9 18h6" /><path d="M10 22h4" /><path d="M8.3 14.5A6 6 0 1 1 16 14.5c-.8.6-1 1.1-1 2.5H9c0-1.4-.2-1.9-.7-2.5Z" /></>,
     'list-checks': <><path d="m3 6 2 2 3-3" /><path d="M11 6h10M11 12h10M11 18h10" /><path d="m3 12 2 2 3-3" /><path d="m3 18 2 2 3-3" /></>,

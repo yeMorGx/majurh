@@ -36,10 +36,12 @@ type CalendarEvent = {
 
 type Idea = {
   id: string;
+  kind: 'note' | 'image' | 'frame';
   title: string;
   body: string;
   author: string;
   color: 'yellow' | 'lilac' | 'blue' | 'peach';
+  imageData?: string;
   x: number;
   y: number;
   rotation: number;
@@ -170,7 +172,7 @@ export function ProductivityClient() {
     setIdeas((current) => {
       const position = current.length;
       const rotations = [-1.2, 0.7, -0.35, 1];
-      return [...current, { id: makeId('idea'), title, body: newIdeaBody.trim(), author: 'GM', color: 'peach', x: 28 + (position % 3) * 242, y: 26 + Math.floor(position / 3) * 188, rotation: rotations[position % rotations.length] }];
+      return [...current, { id: makeId('idea'), kind: 'note', title, body: newIdeaBody.trim(), author: 'GM', color: 'peach', x: 28 + (position % 3) * 242, y: 26 + Math.floor(position / 3) * 188, rotation: rotations[position % rotations.length] }];
     });
     setNewIdeaTitle('');
     setNewIdeaBody('');
@@ -184,6 +186,21 @@ export function ProductivityClient() {
 
   function moveIdea(id: string, x: number, y: number) {
     setIdeas((current) => current.map((idea) => idea.id === id ? { ...idea, x, y } : idea));
+  }
+
+  function addImage(fileName: string, imageData: string, x: number, y: number) {
+    setIdeas((current) => [...current, { id: makeId('image'), kind: 'image', title: fileName, body: '', author: 'GM', color: 'blue', imageData, x, y, rotation: 0 }]);
+    setNotice('Imagem adicionada ao canvas.');
+  }
+
+  function addFrame() {
+    setIdeas((current) => { const position = current.length; return [...current, { id: makeId('frame'), kind: 'frame', title: 'Área de discussão', body: 'Use esta moldura para agrupar uma parte do raciocínio.', author: 'GM', color: 'lilac', x: 30 + (position % 2) * 310, y: 28 + Math.floor(position / 2) * 235, rotation: 0 }]; });
+    setNotice('Moldura adicionada ao canvas.');
+  }
+
+  function removeIdea(id: string) {
+    setIdeas((current) => current.filter((idea) => idea.id !== id));
+    setNotice('Item removido do canvas.');
   }
 
   function connectCalendar(provider: 'Google Calendar' | 'Outlook') {
@@ -215,7 +232,7 @@ export function ProductivityClient() {
       {activeView === 'tasks' && <TasksView tasks={visibleTasks} allTasks={tasks} filter={taskFilter} newTaskTitle={newTaskTitle} onNewTaskTitleChange={setNewTaskTitle} onAddTask={addTask} onFilterChange={setTaskFilter} onToggle={(id) => setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task))} />}
       {activeView === 'tracker' && <TrackerView seconds={timerSeconds} running={timerRunning} task={timerTask} focusMinutes={focusMinutes} sessions={0} tasks={tasks} onTaskChange={setTimerTask} onToggle={() => setTimerRunning((current) => !current)} onReset={() => { setTimerRunning(false); setTimerSeconds(0); }} />}
       {activeView === 'calendar' && <CalendarView month={viewMonth} cells={calendarCells} selectedDay={selectedDay} selectedEvents={selectedEvents} events={events} newEvent={newEvent} onMonthChange={(offset) => setViewMonth((current) => new Date(current.getFullYear(), current.getMonth() + offset, 1))} onSelectDay={setSelectedDay} onNewEventChange={setNewEvent} onAddEvent={addEvent} onConnect={connectCalendar} />}
-      {activeView === 'brainstorm' && <BrainstormView ideas={ideas} newIdeaTitle={newIdeaTitle} newIdeaBody={newIdeaBody} onNewIdeaTitleChange={setNewIdeaTitle} onNewIdeaBodyChange={setNewIdeaBody} onAddIdea={addIdea} onMoveIdea={moveIdea} />}
+      {activeView === 'brainstorm' && <BrainstormView ideas={ideas} newIdeaTitle={newIdeaTitle} newIdeaBody={newIdeaBody} onNewIdeaTitleChange={setNewIdeaTitle} onNewIdeaBodyChange={setNewIdeaBody} onAddIdea={addIdea} onMoveIdea={moveIdea} onAddImage={addImage} onAddFrame={addFrame} onRemoveIdea={removeIdea} onImageError={() => setNotice('Escolha uma imagem de até 1,5 MB.')} />}
     </div>
   );
 }
@@ -259,9 +276,12 @@ function CalendarView({ month, cells, selectedDay, selectedEvents, events, newEv
   return <div className="productivity-view"><ViewHeading eyebrow="Tempo compartilhado" title="Calendário de RH" text="Uma agenda leve para entrevistas, alinhamentos e o que não pode escapar." action={<div className="calendar-navigation"><button className="icon-button" onClick={() => onMonthChange(-1)} aria-label="Mês anterior"><Icon name="arrow-left" size={16} /></button><strong>{capitalize(monthLabel)}</strong><button className="icon-button" onClick={() => onMonthChange(1)} aria-label="Próximo mês"><Icon name="chevron-right" size={16} /></button></div>} /><div className="calendar-layout"><section className="panel calendar-panel"><div className="calendar-weekdays">{['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map((day) => <span key={day}>{day}</span>)}</div><div className="calendar-grid">{cells.map((cell) => { const cellEvents = events.filter((event) => event.date === cell.date); return <button key={cell.date} className={`calendar-cell ${cell.isCurrentMonth ? '' : 'is-outside'} ${cell.date === selectedDay ? 'is-selected' : ''} ${cell.date === formatLocalDate(new Date()) ? 'is-today' : ''}`} onClick={() => onSelectDay(cell.date)}><span className="calendar-date">{cell.day}</span>{cellEvents.slice(0, 2).map((event) => <span className={`calendar-event event-${event.tone}`} key={event.id}>{event.time} · {event.title}</span>)}{cellEvents.length > 2 && <span className="calendar-more">+{cellEvents.length - 2} mais</span>}</button>; })}</div></section><aside className="calendar-sidebar"><section className="panel selected-day-panel"><div className="selected-day-heading"><div><p className="eyebrow">Selecionado</p><h2>{formatCalendarDate(selectedDay)}</h2></div><span>{selectedEvents.length}</span></div>{selectedEvents.length ? <div className="selected-events">{selectedEvents.map((event) => <div className="selected-event" key={event.id}><span className={`event-line event-line-${event.tone}`} /><div><strong>{event.title}</strong><small>{event.time} · {sourceLabel(event.source)}</small></div></div>)}</div> : <p className="calendar-empty">Nenhum compromisso neste dia.</p>}<form className="calendar-add-form" onSubmit={onAddEvent}><div className="field"><label htmlFor="event-title">Novo compromisso</label><input id="event-title" className="form-input" value={newEvent.title} onChange={(event) => onNewEventChange({ ...newEvent, title: event.target.value, date: selectedDay })} placeholder="Ex.: entrevista" /></div><div className="calendar-form-row"><input className="form-input" type="date" value={newEvent.date} onChange={(event) => onNewEventChange({ ...newEvent, date: event.target.value })} aria-label="Data do compromisso" /><input className="form-input" type="time" value={newEvent.time} onChange={(event) => onNewEventChange({ ...newEvent, time: event.target.value })} aria-label="Hora do compromisso" /></div><button className="button button-primary" type="submit"><Icon name="plus" size={15} />Salvar evento</button></form></section><section className="panel integrations-panel"><div className="panel-header"><div><h2>Trazer de fora</h2><p>Conecte suas agendas quando o OAuth estiver configurado.</p></div><Icon name="activity" size={18} /></div><button className="integration-button" onClick={() => onConnect('Google Calendar')}><span className="provider-mark provider-google">G</span><span><strong>Google Calendar</strong><small>Sincronização bidirecional</small></span><Icon name="arrow-up-right" size={15} /></button><button className="integration-button" onClick={() => onConnect('Outlook')}><span className="provider-mark provider-outlook">O</span><span><strong>Outlook</strong><small>Sincronização bidirecional</small></span><Icon name="arrow-up-right" size={15} /></button><p className="integration-note">Calendário local pronto · Google e Outlook em preparação</p></section></aside></div></div>;
 }
 
-function BrainstormView({ ideas, newIdeaTitle, newIdeaBody, onNewIdeaTitleChange, onNewIdeaBodyChange, onAddIdea, onMoveIdea }: { ideas: Idea[]; newIdeaTitle: string; newIdeaBody: string; onNewIdeaTitleChange: (value: string) => void; onNewIdeaBodyChange: (value: string) => void; onAddIdea: (event: FormEvent<HTMLFormElement>) => void; onMoveIdea: (id: string, x: number, y: number) => void }) {
+function BrainstormView({ ideas, newIdeaTitle, newIdeaBody, onNewIdeaTitleChange, onNewIdeaBodyChange, onAddIdea, onMoveIdea, onAddImage, onAddFrame, onRemoveIdea, onImageError }: { ideas: Idea[]; newIdeaTitle: string; newIdeaBody: string; onNewIdeaTitleChange: (value: string) => void; onNewIdeaBodyChange: (value: string) => void; onAddIdea: (event: FormEvent<HTMLFormElement>) => void; onMoveIdea: (id: string, x: number, y: number) => void; onAddImage: (fileName: string, imageData: string, x: number, y: number) => void; onAddFrame: () => void; onRemoveIdea: (id: string) => void; onImageError: () => void }) {
   const canvasRef = useRef<HTMLDivElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState<{ id: string; offsetX: number; offsetY: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; targetId: string | null } | null>(null);
+  const imagePosition = useRef({ x: 28, y: 28 });
 
   useEffect(() => {
     if (!dragging) return;
@@ -280,6 +300,15 @@ function BrainstormView({ ideas, newIdeaTitle, newIdeaBody, onNewIdeaTitleChange
     return () => { window.removeEventListener('pointermove', handleMove); window.removeEventListener('pointerup', handleUp); };
   }, [dragging, onMoveIdea]);
 
+  useEffect(() => {
+    if (!contextMenu) return;
+    function closeMenu() { setContextMenu(null); }
+    function handleKey(event: KeyboardEvent) { if (event.key === 'Escape') closeMenu(); }
+    window.addEventListener('pointerdown', closeMenu);
+    window.addEventListener('keydown', handleKey);
+    return () => { window.removeEventListener('pointerdown', closeMenu); window.removeEventListener('keydown', handleKey); };
+  }, [contextMenu]);
+
   function beginDrag(event: React.PointerEvent<HTMLElement>, idea: Idea) {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -290,7 +319,44 @@ function BrainstormView({ ideas, newIdeaTitle, newIdeaBody, onNewIdeaTitleChange
 
   function focusNewIdea() { document.querySelector<HTMLInputElement>('.idea-add-form input')?.focus(); }
 
-  return <div className="productivity-view"><ViewHeading eyebrow="Espaço de criação" title="Brainstorm livre" text="Um canvas para pensar junto, conectar ideias e tirar o que importa do papel." action={<form className="quick-add-form idea-add-form" onSubmit={onAddIdea}><input value={newIdeaTitle} onChange={(event) => onNewIdeaTitleChange(event.target.value)} placeholder="Título da nova nota..." aria-label="Título da nova nota" /><button className="button button-primary" type="submit"><Icon name="plus" size={15} />Nova nota</button></form>} /><div className="idea-board-shell"><div className="idea-board-toolbar"><span className="idea-canvas-label"><i /> Canvas livre</span><span className="idea-board-help">Clique e arraste as notas para organizar o pensamento</span><span className="idea-board-count">{ideas.length} {ideas.length === 1 ? 'nota' : 'notas'}</span></div><div ref={canvasRef} className="idea-canvas" onDoubleClick={focusNewIdea}>{ideas.length === 0 ? <div className="idea-empty"><span className="idea-empty-icon"><Icon name="lightbulb" size={20} /></span><h3>Seu quadro está limpo.</h3><p>Comece com uma pergunta, uma hipótese ou qualquer faísca que o time queira explorar.</p><button className="button button-secondary" onClick={focusNewIdea}><Icon name="plus" size={15} />Criar primeira nota</button></div> : ideas.map((idea) => <article className={`idea-note note-${idea.color} ${dragging?.id === idea.id ? 'is-dragging' : ''}`} key={idea.id} tabIndex={0} aria-label={`Nota: ${idea.title}`} onPointerDown={(event) => beginDrag(event, idea)} style={{ left: idea.x, top: idea.y, transform: `rotate(${idea.rotation}deg)` }}><div className="idea-note-head"><span className="idea-author">{idea.author}</span><Icon name="more-horizontal" size={16} /></div><h3>{idea.title}</h3>{idea.body && <p>{idea.body}</p>}<small>mover no canvas</small></article>)}</div></div><p className="view-footnote"><Icon name="lightbulb" size={15} /> Quadro livre, sem colunas. As notas ficam salvas neste navegador por enquanto.</p></div>;
+  function openCanvasMenu(event: React.MouseEvent<HTMLDivElement>) {
+    event.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const bounds = canvas.getBoundingClientRect();
+    setContextMenu({ x: clamp(event.clientX - bounds.left, 8, Math.max(8, bounds.width - 202)), y: clamp(event.clientY - bounds.top, 8, Math.max(8, bounds.height - 190)), targetId: null });
+  }
+
+  function openItemMenu(event: React.MouseEvent<HTMLElement>, id: string) {
+    event.preventDefault();
+    event.stopPropagation();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const bounds = canvas.getBoundingClientRect();
+    setContextMenu({ x: clamp(event.clientX - bounds.left, 8, Math.max(8, bounds.width - 202)), y: clamp(event.clientY - bounds.top, 8, Math.max(8, bounds.height - 190)), targetId: id });
+  }
+
+  function openImagePicker() {
+    if (!contextMenu) return;
+    imagePosition.current = { x: contextMenu.x, y: contextMenu.y };
+    setContextMenu(null);
+    imageInputRef.current?.click();
+  }
+
+  function handleImageFile(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    if (!file.type.startsWith('image/') || file.size > 1_500_000) { onImageError(); return; }
+    const reader = new FileReader();
+    reader.onload = () => { if (typeof reader.result === 'string') onAddImage(file.name, reader.result, imagePosition.current.x, imagePosition.current.y); };
+    reader.readAsDataURL(file);
+  }
+
+  function addFrameFromMenu() { setContextMenu(null); onAddFrame(); }
+  function removeItemFromMenu() { if (contextMenu?.targetId) onRemoveIdea(contextMenu.targetId); setContextMenu(null); }
+
+ return <div className="productivity-view"><ViewHeading eyebrow="Espaço de criação" title="Brainstorm livre" text="Um canvas para pensar junto, conectar ideias e tirar o que importa do papel." action={<form className="quick-add-form idea-add-form" onSubmit={onAddIdea}><input value={newIdeaTitle} onChange={(event) => onNewIdeaTitleChange(event.target.value)} placeholder="Título da nova nota..." aria-label="Título da nova nota" /><button className="button button-primary" type="submit"><Icon name="plus" size={15} />Nova nota</button></form>} /><div className="idea-board-shell"><div className="idea-board-toolbar"><span className="idea-canvas-label"><i /> Canvas livre</span><span className="idea-board-help">Clique e arraste as notas · botão direito para inserir</span><span className="idea-board-count">{ideas.length} {ideas.length === 1 ? 'item' : 'itens'}</span></div><div ref={canvasRef} className="idea-canvas" onContextMenu={openCanvasMenu} onDoubleClick={focusNewIdea}>{ideas.length === 0 ? <div className="idea-empty"><span className="idea-empty-icon"><Icon name="lightbulb" size={20} /></span><h3>Seu quadro está limpo.</h3><p>Comece com uma pergunta, uma hipótese ou qualquer faísca que o time queira explorar.</p><button className="button button-secondary" onClick={focusNewIdea}><Icon name="plus" size={15} />Criar primeira nota</button></div> : ideas.map((idea) => <article className={`idea-note note-${idea.color} idea-${idea.kind} ${dragging?.id === idea.id ? 'is-dragging' : ''}`} key={idea.id} tabIndex={0} aria-label={`${idea.kind === 'image' ? 'Imagem' : idea.kind === 'frame' ? 'Moldura' : 'Nota'}: ${idea.title}`} onPointerDown={(event) => beginDrag(event, idea)} onContextMenu={(event) => openItemMenu(event, idea.id)} style={{ left: idea.x, top: idea.y, transform: `rotate(${idea.rotation}deg)` }}>{idea.kind === 'image' && idea.imageData ? <><div className="canvas-image-wrap"><img src={idea.imageData} alt={idea.title} /></div><h3>{idea.title}</h3></> : idea.kind === 'frame' ? <><div className="frame-icon"><Icon name="kanban" size={18} /></div><h3>{idea.title}</h3>{idea.body && <p>{idea.body}</p>}</> : <><div className="idea-note-head"><span className="idea-author">{idea.author}</span><Icon name="more-horizontal" size={16} /></div><h3>{idea.title}</h3>{idea.body && <p>{idea.body}</p>}</>}<small>botão direito para opções</small></article>)}</div>{contextMenu && <div className="idea-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} role="menu" onPointerDown={(event) => event.stopPropagation()}><span className="context-menu-label">Inserir no quadro</span><button onClick={() => { setContextMenu(null); focusNewIdea(); }} role="menuitem"><Icon name="lightbulb" size={15} />Nova nota</button><button onClick={openImagePicker} role="menuitem"><Icon name="image" size={15} />Imagem do computador</button><button onClick={addFrameFromMenu} role="menuitem"><Icon name="kanban" size={15} />Moldura de contexto</button>{contextMenu.targetId && <><div className="context-menu-divider" /><button className="context-menu-danger" onClick={removeItemFromMenu} role="menuitem"><Icon name="x" size={15} />Excluir item</button></>}</div>}<input ref={imageInputRef} className="visually-hidden-input" type="file" accept="image/*" onChange={handleImageFile} /></div><p className="view-footnote"><Icon name="lightbulb" size={15} /> Quadro livre, sem colunas. Botão direito abre ações rápidas; itens ficam salvos neste navegador.</p></div>;
 }
 
 function ViewHeading({ eyebrow, title, text, action }: { eyebrow: string; title: string; text: string; action?: React.ReactNode }) {

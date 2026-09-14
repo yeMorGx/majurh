@@ -471,11 +471,15 @@ A rota `/produtividade` concentra as ferramentas de trabalho diário do time de 
 - **TO-DO:** lista de ações com conclusão, prioridade e filtros por hoje ou prioridade alta.
 - **Time tracker:** sessão de foco vinculada a uma tarefa, com iniciar, pausar e zerar.
 - **Calendário:** grade mensal, seleção de dia, criação de compromissos e indicação de origem local.
-- **Brainstorm:** canvas livre no estilo Miro, com notas posicionáveis em duas dimensões e sem colunas de fluxo.
+- **Brainstorm:** canvas livre no estilo Miro, com notas posicionáveis em duas dimensões e sem colunas de fluxo. No canvas, o botão direito abre ações rápidas para criar nota, inserir imagem local de até 1,5 MB, adicionar moldura ou excluir o item selecionado.
 
 Nesta primeira camada, os dados dessas ferramentas são persistidos no `localStorage` do navegador para permitir validação rápida do fluxo sem colocar dados de produtividade em tabelas antes de fechar o modelo de colaboração. A próxima etapa deve migrar os itens para o Neon por organização e usuário, registrar histórico de movimentações e substituir o armazenamento local por APIs autenticadas.
 
 O calendário já tem uma interface própria alinhada aos tokens do produto. A integração com Google Calendar e Outlook deve ser implementada por OAuth no servidor, com tokens criptografados e escopo mínimo. Os botões atuais deixam explícita essa preparação e não tentam autenticar sem as credenciais da organização. O [CalendarJS](https://calendarjs.com/) pode ser avaliado como camada de agenda/timeline na etapa de sincronização, mantendo o tema visual do Vieira Couto RH.
+
+### Referência de design
+
+O sistema visual adota o [Material Design 3](https://m3.material.io/) como referência de fundação: papéis semânticos de cor, tokens compartilhados, estados de interação, foco visível e layouts adaptativos. O produto não replica a paleta nem os componentes do Material; os papéis `primary`, `surface`, `on-surface` e `outline` são mapeados para a identidade verde do Vieira Couto RH. A sidebar permanece como trilho de navegação e as páginas usam composição de área principal com painel de apoio quando o conteúdo pedir contexto lateral.
 
 ### Critérios de aceite da camada visual
 
