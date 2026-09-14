@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Vieira Couto RH',
-  description: 'Controle de candidatos, documentos e processos seletivos.',
+  title: 'Majurh',
+  description: 'Gestão de pessoas, candidatos e processos em um só lugar.',
 };
 
 export default function RootLayout({

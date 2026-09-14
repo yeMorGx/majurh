@@ -32,7 +32,7 @@ export async function GET() {
 
     if (membership) {
       const organizations = await db`
-        select id, name, slug
+        select id, name, slug, brand_logo_url, brand_primary_color, brand_accent_color
         from public.organizations
         where id = ${membership.organization_id}::uuid
         limit 1

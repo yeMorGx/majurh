@@ -5,8 +5,9 @@ import { OrganizationOnboarding } from '@/components/organization/organization-o
 import { ProfileOnboarding } from '@/components/auth/profile-onboarding';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon, type IconName } from '@/components/ui/icon';
+import { getBrandStyle, platformBrand, type OrganizationBrand } from '@/lib/branding';
 
 type Profile = {
   id: string;
@@ -19,7 +20,7 @@ type MeResponse = {
     user: { id: string; email: string | null };
     profile: Profile | null;
     membership: { role: string } | null;
-    organization: { id: string; name: string } | null;
+    organization: OrganizationBrand | null;
   };
 };
 
@@ -69,6 +70,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    function handleOrganizationUpdated(event: Event) {
+      const organization = (event as CustomEvent<OrganizationBrand>).detail;
+      if (organization) {
+        setMe((current) => current ? { ...current, organization } : current);
+      }
+    }
+
+    window.addEventListener('organization:updated', handleOrganizationUpdated);
+    return () => window.removeEventListener('organization:updated', handleOrganizationUpdated);
+  }, []);
+
+  useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
@@ -79,6 +92,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     .map((part) => part[0])
     .join('')
     .toUpperCase();
+  const brandName = me?.organization?.name || platformBrand.name;
+  const brandDescriptor = me?.organization ? `Powered by ${platformBrand.name}` : platformBrand.descriptor;
+  const brandLogo = me?.organization?.brand_logo_url || platformBrand.logoPath;
+  const brandStyle = getBrandStyle(me?.organization);
+
+  useEffect(() => {
+    document.title = brandName === platformBrand.name ? platformBrand.name : `${brandName} · ${platformBrand.name}`;
+    let favicon = document.querySelector<HTMLLinkElement>('link[rel~="icon"]');
+    if (!favicon) {
+      favicon = document.createElement('link');
+      favicon.rel = 'icon';
+      document.head.appendChild(favicon);
+    }
+    favicon.href = brandLogo;
+  }, [brandLogo, brandName]);
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -96,14 +124,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="app-frame">
+    <div className="app-frame" style={brandStyle as CSSProperties}>
       <div className={`mobile-scrim ${mobileOpen ? 'is-visible' : ''}`} onClick={() => setMobileOpen(false)} />
       <aside className={`app-sidebar ${mobileOpen ? 'is-open' : ''}`}>
         <div className="brand-lockup">
-          <div className="brand-mark brand-mark-logo"><img src="/logo.svg" alt="" /></div>
+          <div className="brand-mark brand-mark-logo"><img src={brandLogo} alt="" onError={(event) => { event.currentTarget.src = platformBrand.logoPath; }} /></div>
           <div>
-            <strong>Vieira Couto</strong>
-            <span>RH operacional</span>
+            <strong>{brandName}</strong>
+            <span>{brandDescriptor}</span>
           </div>
           <button className="icon-button mobile-close" onClick={() => setMobileOpen(false)} aria-label="Fechar menu">
             <Icon name="x" />

@@ -12,7 +12,7 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: hasNeonConfig,
-      service: 'vieira-couto-rh',
+      service: 'majurh',
       neonConfigured: hasNeonConfig,
     },
     { status: hasNeonConfig ? 200 : 503 },

@@ -1,5 +1,5 @@
 :root {
-  /* Material 3: papéis semânticos adaptados à paleta Vieira Couto. */
+  /* Material 3: papéis semânticos adaptados à identidade do tenant. */
   --md-sys-color-primary: #0f4d3a;
   --md-sys-color-on-primary: #ffffff;
   --md-sys-color-primary-container: #ddf3e9;
@@ -321,6 +321,12 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .setup-callout p { margin: 0; color: var(--vc-muted); }
 .setup-code { display: inline-block; margin-top: 12px; padding: 8px 10px; border-radius: 8px; background: var(--vc-ink); color: white; font-family: var(--font-mono); font-size: 11px; }
 .settings-stack { display: grid; gap: 16px; }
+.brand-settings-panel .panel-header { align-items: flex-start; }
+.brand-platform-tag { flex: 0 0 auto; padding: 6px 9px; border: 1px solid var(--vc-border); border-radius: var(--radius-pill); background: var(--vc-surface-subtle); color: var(--vc-muted); font-family: var(--font-mono); font-size: 10px; }
+.brand-settings-form { display: grid; gap: 16px; max-width: 760px; }
+.brand-color-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.brand-color-control { display: grid; grid-template-columns: 44px minmax(0, 1fr); align-items: center; gap: 8px; }
+.brand-color-control input[type='color'] { width: 44px; height: 44px; padding: 3px; border: 1px solid var(--vc-border); border-radius: var(--md-sys-shape-corner-small); background: white; cursor: pointer; }
 .vacancy-form { display: grid; grid-template-columns: minmax(180px, 1.25fr) minmax(150px, 1fr) minmax(150px, 1fr) auto; align-items: end; gap: 10px; padding: 16px; margin-bottom: 18px; border: 1px dashed var(--vc-border); border-radius: 12px; background: var(--vc-surface-subtle); }
 .vacancy-list { display: grid; }
 .vacancy-row { display: flex; align-items: center; gap: 12px; padding: 13px 0; border-top: 1px solid var(--vc-border); }
@@ -385,6 +391,7 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .onboarding-intro, .onboarding-form { padding: 24px; }
   .upload-box { grid-template-columns: 1fr; align-items: stretch; }
   .upload-box .button { width: 100%; }
+  .brand-color-grid { grid-template-columns: 1fr; }
   .vacancy-form { grid-template-columns: 1fr; align-items: stretch; }
   .vacancy-form .button { width: 100%; }
   .vacancy-row { align-items: flex-start; flex-wrap: wrap; }

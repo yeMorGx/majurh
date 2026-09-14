@@ -1,4 +1,4 @@
--- Vieira Couto RH — esquema inicial para Neon Postgres.
+-- Majurh — esquema inicial para Neon Postgres.
 -- A autenticação é gerenciada pelo Neon Auth. Os IDs de usuário são text
 -- para acompanhar o formato do Better Auth; os IDs dos registros do RH são uuid.
 
@@ -55,6 +55,9 @@ create table if not exists public.organizations (
   id uuid primary key default gen_random_uuid(),
   name text not null check (char_length(btrim(name)) between 2 and 120),
   slug text not null unique check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
+  brand_logo_url text,
+  brand_primary_color text,
+  brand_accent_color text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

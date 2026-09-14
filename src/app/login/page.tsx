@@ -2,6 +2,7 @@
 
 import { Icon } from '@/components/ui/icon';
 import { authClient } from '@/lib/auth/client';
+import { platformBrand } from '@/lib/branding';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
@@ -91,7 +92,7 @@ export default function LoginPage() {
     <main className="login-page">
       <section className="login-form-side">
         <div className="login-form-wrap">
-          <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src="/logo.svg" alt="" /></div><strong>Vieira Couto RH</strong></div>
+          <div className="login-brand"><div className="brand-mark brand-mark-logo"><img src={platformBrand.logoPath} alt="" /></div><strong>{platformBrand.name}</strong></div>
           <p className="eyebrow">Acesso interno</p>
           <h1>Entrar no seu posto de controle.</h1>
           <p>Organize candidatos, processos e documentos em um só lugar.</p>
@@ -117,7 +118,7 @@ export default function LoginPage() {
           <button type="button" className="login-mode-toggle" onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setError(''); }}>{mode === 'login' ? 'Primeiro acesso? Criar uma conta' : 'Já tenho uma conta? Entrar'}</button>
         </div>
       </section>
-      <aside className="login-side-art"><div className="art-content"><span className="art-kicker">Vieira Couto · RH</span><h2>O histórico certo para a próxima decisão.</h2><p>Uma visão calma do fluxo de pessoas, do primeiro contato à admissão.</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Candidato identificado</div><div className="art-step"><span className="art-step-dot" />Processo em andamento</div><div className="art-step"><span className="art-step-dot" />Próximo passo claro</div></div></div></aside>
+      <aside className="login-side-art"><div className="art-content"><span className="art-kicker">{platformBrand.name} · B2B</span><h2>O histórico certo para a próxima decisão.</h2><p>Uma visão calma do fluxo de pessoas, do primeiro contato à admissão.</p><div className="art-trail"><div className="art-step"><span className="art-step-dot" />Candidato identificado</div><div className="art-step"><span className="art-step-dot" />Processo em andamento</div><div className="art-step"><span className="art-step-dot" />Próximo passo claro</div></div></div></aside>
     </main>
   );
 }

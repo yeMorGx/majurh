@@ -1,4 +1,4 @@
-# Configuração do Vieira Couto RH
+# Configuração do Majurh
 
 ## Pré-requisitos
 
@@ -6,6 +6,12 @@
 - Projeto Neon conectado ao projeto Vercel `majurh`.
 - Neon Auth habilitado no recurso do projeto.
 - Blob Store privado da Vercel conectado ao mesmo projeto para documentos.
+
+## White-label B2B
+
+Majurh é a marca principal da plataforma. Depois que uma organização é criada, administradores podem abrir **Configurações → Identidade da organização** para definir o nome exibido, uma logo por URL HTTPS e as cores principal/de destaque. O nome e a logo também atualizam o título da aba e o favicon após o carregamento do tenant. Os valores são opcionais: quando ficam vazios, a interface usa a identidade padrão do Majurh.
+
+A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos de identidade à tabela `public.organizations`. Execute essa migração no banco Neon antes de usar o editor de marca em produção.
 
 ## Variáveis locais
 
@@ -35,7 +41,7 @@ As consultas são executadas exclusivamente no servidor e cada rota valida o ví
 
 ## Neon Auth
 
-O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Vieira Couto RH.
+O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e pode receber a identidade do tenant em uma etapa de domínio personalizado.
 
 Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo fluxo de cadastro ou recuperação do provedor.
 
@@ -88,7 +94,7 @@ Os botões de Google Calendar e Outlook estão visíveis como preparação de in
 
 ### Referência visual
 
-As telas usam Material Design 3 como referência de fundação para tokens semânticos, estados de foco/hover, superfícies e adaptação entre tamanhos de tela. A identidade do Vieira Couto RH continua definindo a paleta, a tipografia e os elementos de operação de RH.
+As telas usam Material Design 3 como referência de fundação para tokens semânticos, estados de foco/hover, superfícies e adaptação entre tamanhos de tela. A identidade do tenant define nome, logo e cores quando configurada; Majurh permanece como fallback da plataforma.
 
 ## Migração legada
 

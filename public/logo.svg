@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
-  <title id="title">Vieira Couto</title>
-  <desc id="desc">Símbolo geométrico azul e roxo da Vieira Couto</desc>
+  <title id="title">Majurh</title>
+  <desc id="desc">Símbolo geométrico azul e roxo da plataforma Majurh</desc>
   <rect fill="white" fill-opacity="0" width="1024" height="1024"/>
   <clipPath id="logo-clip"><rect width="1024" height="1024"/></clipPath>
   <g clip-path="url(#logo-clip)">

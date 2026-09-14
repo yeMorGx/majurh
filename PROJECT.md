@@ -1,4 +1,4 @@
-# Vieira Couto RH — planejamento do produto e guia de implementação
+# Majurh — planejamento do produto e guia de implementação
 
 > Documento de referência para construir o MVP no Codex.
 
@@ -19,7 +19,7 @@ Pendência operacional: criar novamente no Neon Auth as contas que precisam aces
 
 ## 1. Visão do produto
 
-O **Vieira Couto RH** é uma aplicação interna para substituir controles dispersos em planilhas por um histórico confiável de candidatos e processos seletivos.
+O **Majurh** é uma plataforma B2B white-label para substituir controles dispersos em planilhas por um histórico confiável de candidatos e processos seletivos. Cada organização usa seu próprio espaço, identidade visual e equipe dentro da plataforma.
 
 O sistema deve responder rapidamente a quatro perguntas:
 
@@ -475,11 +475,15 @@ A rota `/produtividade` concentra as ferramentas de trabalho diário do time de 
 
 Nesta primeira camada, os dados dessas ferramentas são persistidos no `localStorage` do navegador para permitir validação rápida do fluxo sem colocar dados de produtividade em tabelas antes de fechar o modelo de colaboração. A próxima etapa deve migrar os itens para o Neon por organização e usuário, registrar histórico de movimentações e substituir o armazenamento local por APIs autenticadas.
 
-O calendário já tem uma interface própria alinhada aos tokens do produto. A integração com Google Calendar e Outlook deve ser implementada por OAuth no servidor, com tokens criptografados e escopo mínimo. Os botões atuais deixam explícita essa preparação e não tentam autenticar sem as credenciais da organização. O [CalendarJS](https://calendarjs.com/) pode ser avaliado como camada de agenda/timeline na etapa de sincronização, mantendo o tema visual do Vieira Couto RH.
+O calendário já tem uma interface própria alinhada aos tokens do produto. A integração com Google Calendar e Outlook deve ser implementada por OAuth no servidor, com tokens criptografados e escopo mínimo. Os botões atuais deixam explícita essa preparação e não tentam autenticar sem as credenciais da organização. O [CalendarJS](https://calendarjs.com/) pode ser avaliado como camada de agenda/timeline na etapa de sincronização, mantendo o tema visual do tenant.
+
+### Diretriz white-label B2B
+
+Majurh é a marca da plataforma e o fallback visual. A organização é o tenant que aparece no espaço autenticado e pode configurar nome exibido, logo, cor principal e cor de destaque; o nome e a logo também atualizam o título da aba e o favicon. O vínculo de cada usuário continua isolado por `organization_members`; nenhuma identidade, configuração ou dado operacional deve atravessar organizações. Domínio customizado, convites e cobrança por tenant ficam para uma etapa posterior.
 
 ### Referência de design
 
-O sistema visual adota o [Material Design 3](https://m3.material.io/) como referência de fundação: papéis semânticos de cor, tokens compartilhados, estados de interação, foco visível e layouts adaptativos. O produto não replica a paleta nem os componentes do Material; os papéis `primary`, `surface`, `on-surface` e `outline` são mapeados para a identidade verde do Vieira Couto RH. A sidebar permanece como trilho de navegação e as páginas usam composição de área principal com painel de apoio quando o conteúdo pedir contexto lateral.
+O sistema visual adota o [Material Design 3](https://m3.material.io/) como referência de fundação: papéis semânticos de cor, tokens compartilhados, estados de interação, foco visível e layouts adaptativos. O produto não replica a paleta nem os componentes do Material; os papéis `primary`, `surface`, `on-surface` e `outline` são mapeados para a identidade configurada do tenant, com Majurh como fallback. A sidebar permanece como trilho de navegação e as páginas usam composição de área principal com painel de apoio quando o conteúdo pedir contexto lateral.
 
 ### Critérios de aceite da camada visual
 
@@ -490,4 +494,6 @@ O sistema visual adota o [Material Design 3](https://m3.material.io/) como refer
 - [ ] Timer inicia, pausa e atualiza o tempo em tempo real.
 - [ ] Calendário permite navegar entre meses e criar evento no dia escolhido.
 - [ ] A tela funciona em desktop e mobile, com foco visível e redução de movimento respeitada.
+- [ ] Administrador consegue configurar nome, logo e cores do tenant sem afetar outra organização.
+- [ ] Majurh aparece como fallback quando a organização não possui personalização.
 - [ ] Google e Outlook só são considerados concluídos após OAuth, sincronização incremental, revogação e tratamento de conflitos testados.

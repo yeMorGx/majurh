@@ -79,7 +79,7 @@ export function OrganizationOnboarding({
               maxLength={120}
               value={name}
               onChange={(event) => setName(event.target.value)}
-              placeholder="Ex.: Vieira Couto RH"
+              placeholder="Ex.: Nome da sua empresa"
             />
             <small>Você será o administrador deste espaço e poderá adicionar sua equipe depois.</small>
           </div>
