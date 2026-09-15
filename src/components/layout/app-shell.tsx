@@ -1,7 +1,7 @@
 'use client';
 
 import { authClient } from '@/lib/auth/client';
-import { AccessPending } from '@/components/organization/access-pending';
+import { OrganizationOnboarding } from '@/components/organization/organization-onboarding';
 import { ProfileOnboarding } from '@/components/auth/profile-onboarding';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -222,8 +222,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               onCompleted={(profile) => setMe((current) => current ? { ...current, profile } : current)}
             />
           ) : meLoaded && me?.profile && !me.organization ? (
-            <AccessPending
+            <OrganizationOnboarding
               email={me.user.email}
+              onCompleted={(result) => setMe((current) => current ? { ...current, organization: result.organization, membership: result.membership } : current)}
             />
           ) : children}
         </main>

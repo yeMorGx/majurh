@@ -2,6 +2,8 @@
 
 O cadastro público continua desativado. Novos acessos devem ser criados pela conta administradora no console isolado do Majurh.
 
+O primeiro usuário que autenticar sem organização pode criar o próprio espaço pelo fluxo **Criar organização**. Esse usuário vira administrador automaticamente; os acessos seguintes devem ser criados pelo console administrativo.
+
 ## Rotas
 
 - Local: `http://localhost:3000/admin`

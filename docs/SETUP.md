@@ -67,6 +67,12 @@ Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do ba
 
 O detalhamento do console, do vínculo Neon Auth/Postgres e da configuração do subdomínio está em [`docs/ADMIN_SUBDOMAIN.md`](./ADMIN_SUBDOMAIN.md).
 
+### Primeiro acesso sem organização
+
+Uma conta autenticada sem perfil conclui primeiro o nome do próprio perfil. Em seguida, se ainda não tiver vínculo, o Majurh apresenta **Criar organização**. O nome informado gera um slug disponível, cria a organização no Neon Postgres e registra automaticamente o usuário como `admin`. A partir daí, a pessoa entra no dashboard e pode configurar o white-label ou criar os demais acessos no console administrativo.
+
+Se a pessoa já tiver sido convidada para uma organização, o convite continua prevalecendo: o vínculo é criado pelo fluxo de `/convite/[token]` e ela não precisa criar uma nova organização.
+
 ### Convites e primeiro acesso
 
 1. Um administrador abre `/administracao` e informa o e-mail e o papel (`Recrutador` ou `Visualizador`).
