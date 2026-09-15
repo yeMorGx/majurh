@@ -29,6 +29,8 @@ Copie `.env.example` para `.env.local` e preencha os valores fornecidos pela int
 
 ```env
 DATABASE_URL=
+# Alternativa aceita quando a integração da Vercel cria este nome.
+# POSTGRES_URL=
 NEON_AUTH_BASE_URL=
 NEON_AUTH_COOKIE_SECRET=
 BLOB_READ_WRITE_TOKEN=
@@ -61,7 +63,9 @@ As consultas são executadas exclusivamente no servidor e cada rota valida o ví
 
 O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e recebe a identidade do tenant pelo parâmetro seguro `org` ou pelos links gerados na área de organização.
 
-Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador ou pela recuperação do provedor. O cadastro público foi desativado: novos acessos devem ser criados em **Administração → Novo acesso**, por convite.
+Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador ou pela recuperação do provedor. O cadastro público foi desativado: novos acessos devem ser criados pela conta administradora no console isolado **`/admin`** (em produção, no subdomínio administrativo). O fluxo por convite continua disponível em **Administração** para organizações que optarem por convidar a pessoa a concluir o próprio cadastro.
+
+O detalhamento do console, do vínculo Neon Auth/Postgres e da configuração do subdomínio está em [`docs/ADMIN_SUBDOMAIN.md`](./ADMIN_SUBDOMAIN.md).
 
 ### Convites e primeiro acesso
 
@@ -94,6 +98,8 @@ No projeto da Vercel, abra **Settings → Environment Variables** e confira esta
 
 ```env
 DATABASE_URL=postgresql://...
+# Se a integração Neon/Vercel usar este nome, ele também é aceito:
+# POSTGRES_URL=postgresql://...
 NEON_AUTH_BASE_URL=https://...neonauth.../neondb/auth
 NEON_AUTH_COOKIE_SECRET=um-segredo-com-pelo-menos-32-caracteres
 BLOB_READ_WRITE_TOKEN=vercel_blob_rw_...

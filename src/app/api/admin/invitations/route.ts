@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 
-import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
+import { getAdminContext } from '@/lib/api/admin-context';
 import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
@@ -109,24 +109,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return databaseErrorResponse(error, { duplicateMessage: 'Já existe um convite para este e-mail.' });
   }
-}
-
-async function getAdminContext() {
-  const { db, userId } = await getAuthenticatedClient();
-  if (!userId) return { response: errorJson('É necessário estar autenticado.', 401) } as const;
-
-  const memberships = await db`
-    select organization_id
-    from public.organization_members
-    where user_id = ${userId}
-    order by created_at asc
-    limit 1
-  ` as Array<{ organization_id: string }>;
-  const organizationId = memberships[0]?.organization_id;
-  if (!organizationId) return { response: errorJson('Seu usuário ainda não está associado a uma organização.', 403) } as const;
-
-  const role = await getOrganizationRole(db, userId, organizationId);
-  if (role !== 'admin') return { response: errorJson('Apenas administradores podem gerenciar acessos.', 403) } as const;
-
-  return { db, userId, organizationId } as const;
 }

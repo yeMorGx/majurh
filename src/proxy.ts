@@ -8,14 +8,19 @@ function isPublicPath(pathname: string) {
   return publicPaths.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 }
 
-const neonMiddleware = auth.middleware({ loginUrl: '/login' });
-
 export async function proxy(request: NextRequest) {
   if (isPublicPath(request.nextUrl.pathname)) {
     return NextResponse.next({ request });
   }
 
-  return neonMiddleware(request);
+  const hostname = request.nextUrl.hostname.toLowerCase();
+  const isAdminSubdomain = hostname.startsWith('admin.');
+  const loginUrl = isAdminSubdomain ? '/login?redirectedFrom=/admin' : '/login';
+
+  // A mesma aplicação atende o domínio principal e o console isolado. No
+  // subdomínio admin, o middleware direciona o visitante para o console
+  // correto após autenticar, sem expor essa tela na navegação do app.
+  return auth.middleware({ loginUrl })(request);
 }
 
 export const config = {

@@ -17,6 +17,7 @@ export type IconName =
   | 'eye'
   | 'eye-off'
   | 'kanban'
+  | 'key'
   | 'lightbulb'
   | 'list-checks'
   | 'mail'
@@ -76,6 +77,7 @@ export function Icon({ name, size = 18, strokeWidth = 1.8, className }: IconProp
     'eye-off': <><path d="m3 3 18 18" /><path d="M10.6 6.9A10.5 10.5 0 0 1 12 7c6 0 9.5 5 9.5 5a17.7 17.7 0 0 1-3.2 3.3M6.7 6.7C4 8.4 2.5 12 2.5 12s3.5 5 9.5 5c1.3 0 2.5-.3 3.6-.8" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
     mail: <><rect width="18" height="14" x="3" y="5" rx="2" /><path d="m3 7 9 6 9-6" /></>,
     kanban: <><rect width="18" height="16" x="3" y="4" rx="2" /><path d="M9 4v9M15 4v5" /></>,
+    key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 8-8M15 4h4v4M14 9l2 2" /></>,
     lightbulb: <><path d="M9 18h6" /><path d="M10 22h4" /><path d="M8.3 14.5A6 6 0 1 1 16 14.5c-.8.6-1 1.1-1 2.5H9c0-1.4-.2-1.9-.7-2.5Z" /></>,
     'list-checks': <><path d="m3 6 2 2 3-3" /><path d="M11 6h10M11 12h10M11 18h10" /><path d="m3 12 2 2 3-3" /><path d="m3 18 2 2 3-3" /></>,
     'layout-dashboard': <><rect width="7" height="9" x="3" y="3" rx="1" /><rect width="7" height="5" x="14" y="3" rx="1" /><rect width="7" height="9" x="14" y="12" rx="1" /><rect width="7" height="5" x="3" y="16" rx="1" /></>,

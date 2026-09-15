@@ -4,7 +4,7 @@ import { Icon } from '@/components/ui/icon';
 import { ThreeLogo } from '@/components/brand/three-logo';
 import { authClient } from '@/lib/auth/client';
 import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 
 const defaultLoginLogoPath = '/brand/majurh-dog-mark.svg';
@@ -91,6 +91,7 @@ function authErrorMessage(error: unknown) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -133,7 +134,11 @@ export default function LoginPage() {
         setError(authErrorMessage(result.error));
         return;
       }
-      router.replace('/dashboard');
+      const requestedPath = searchParams.get('redirectedFrom');
+      const redirectPath = requestedPath && requestedPath.startsWith('/') && !requestedPath.startsWith('//')
+        ? requestedPath
+        : '/dashboard';
+      router.replace(redirectPath);
       router.refresh();
     } catch (loginError) {
       setError(loginError instanceof Error && loginError.message.includes('Variável de ambiente') ? 'O Neon Auth ainda não está configurado neste ambiente.' : authErrorMessage(loginError));
