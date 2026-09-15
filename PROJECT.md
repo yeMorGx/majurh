@@ -15,7 +15,7 @@ Validações executadas:
 
 Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O domínio oficial `https://majurh.vercel.app` também foi cadastrado como origem confiável no Neon Auth. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
 
-Pendência operacional: executar `neon/migrations/0003_admin_invitations_and_login_branding.sql` no banco Neon antes de usar os convites e o editor de login em produção. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
+As migrações `0002` a `0005` foram aplicadas no banco Neon e o fluxo de Administração voltou a carregar. A base de integrações está pronta; falta configurar `INTEGRATIONS_ENCRYPTION_KEY` antes de armazenar credenciais de provedores. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
 
 ## 1. Visão do produto
 
@@ -467,6 +467,8 @@ Componentes prioritários:
 - [ ] Dashboard usa dados reais do banco.
 - [ ] Viewer não consegue alterar dados.
 - [ ] Autorização por organização e Blob privado foram testados para permitir e negar acesso.
+- [ ] Configurar credenciais de Catho, Sólides, LinkedIn e Indeed pela área de integrações.
+- [ ] Publicar vagas e importar candidaturas por adaptadores oficiais, com logs e retentativas.
 - [ ] Nenhuma chave privilegiada chega ao navegador.
 - [ ] Interface funciona em desktop e mobile.
 - [ ] Fluxos principais têm feedback de carregamento, erro e sucesso.
@@ -492,9 +494,17 @@ Nesta primeira camada, os dados dessas ferramentas são persistidos no `localSto
 
 O calendário já tem uma interface própria alinhada aos tokens do produto. A integração com Google Calendar e Outlook deve ser implementada por OAuth no servidor, com tokens criptografados e escopo mínimo. Os botões atuais deixam explícita essa preparação e não tentam autenticar sem as credenciais da organização. O [CalendarJS](https://calendarjs.com/) pode ser avaliado como camada de agenda/timeline na etapa de sincronização, mantendo o tema visual do tenant.
 
+### Integrações de recrutamento
+
+O backend possui a base multi-tenant em `organization_integrations`, com status por provedor e credenciais criptografadas com `INTEGRATIONS_ENCRYPTION_KEY`. A API não retorna o segredo armazenado. Os próximos adaptadores devem normalizar vagas, candidatos e candidaturas para as tabelas internas, preservar o provedor em `recruitment_processes.source` e registrar o identificador externo para evitar duplicidade.
+
+Os conectores devem usar as APIs oficiais. A API da Sólides usa token emitido pela própria plataforma; Catho disponibiliza API de vagas para empresas; LinkedIn Talent Solutions e Indeed condicionam os fluxos de ATS a aprovação/parceria. Até que as credenciais e aprovações estejam disponíveis, a integração permanece em estado `pending` e não tenta fazer chamadas externas.
+
 ### Diretriz white-label B2B
 
 Majurh é a marca da plataforma e o fallback visual. A organização é o tenant que aparece no espaço autenticado e pode configurar nome exibido, logo, cor principal, cor de destaque, banner, texto de apoio, título e descrição da tela de login em `/organizacao`; o nome e a logo também atualizam o título da aba e o favicon. O link `/login?org={slug}` apresenta a identidade pública do tenant. O vínculo de cada usuário continua isolado por `organization_members`; nenhuma identidade, configuração ou dado operacional deve atravessar organizações.
+
+A tela padrão de `/login` segue o mockup Majurh em composição dividida: formulário claro à esquerda e arte `public/brand/majurh-login-art.png` à direita. A marca utiliza `public/brand/majurh-dog-mark.svg`, o wordmark editável e o asset `public/brand/majurh-login-squares.png`; as imagens customizadas do white-label continuam sendo arquivos enviados ao armazenamento privado.
 
 O gerenciamento de pessoas fica separado em `/administracao`. Somente administradores podem criar ou revogar convites, e os papéis de novos membros começam limitados a `recruiter` ou `viewer`. O envio de e-mail transacional ainda não está conectado: o link é gerado para cópia manual, evitando colocar credenciais de provedor no navegador.
 

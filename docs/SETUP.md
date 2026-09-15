@@ -11,7 +11,9 @@
 
 Majurh é a marca principal da plataforma. Administradores podem abrir **Organização** para definir o nome exibido, enviar um arquivo de logo, escolher as cores principal/de destaque e enviar o banner da tela de login. Também é possível editar o texto de apoio, título e descrição. O nome e a logo atualizam o título da aba e o favicon após o carregamento do tenant. Os arquivos aceitos são PNG, JPG, WEBP ou SVG, com até 5 MB. A tela pública usa a identidade quando aberta como `/login?org=slug`.
 
-A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. Execute as três migrações no banco Neon antes de usar o editor de marca e a administração de acessos em produção.
+A composição padrão da tela usa os assets `public/brand/majurh-dog-mark.svg`, `public/brand/majurh-login-art.png` e `public/brand/majurh-login-squares.png`. Os campos permanecem inputs reais com labels acessíveis; o círculo da senha alterna sua visibilidade. A organização pode substituir logo e banner somente por upload de arquivo, sem URL de imagem editável.
+
+A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. As migrações `0002` a `0005` já foram aplicadas no banco Neon; configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
 
 ## Variáveis locais
 
@@ -22,9 +24,17 @@ DATABASE_URL=
 NEON_AUTH_BASE_URL=
 NEON_AUTH_COOKIE_SECRET=
 BLOB_READ_WRITE_TOKEN=
+# Chave base64url de 32 bytes, somente no servidor, para credenciais de integrações.
+INTEGRATIONS_ENCRYPTION_KEY=
 ```
 
 O `NEON_AUTH_COOKIE_SECRET` deve ter pelo menos 32 caracteres e ser o mesmo em cada ambiente. Nunca publique `DATABASE_URL`, `NEON_AUTH_COOKIE_SECRET` ou `BLOB_READ_WRITE_TOKEN` no navegador, no Git ou em variáveis `NEXT_PUBLIC_`.
+
+## Integrações de recrutamento
+
+A base de integrações fica na migração `neon/migrations/0005_integrations_foundation.sql`. Ela cria um registro por provedor e organização, guarda somente credenciais criptografadas e nunca devolve segredos pela API. A aplicação usa `INTEGRATIONS_ENCRYPTION_KEY` para a criptografia; gere uma chave aleatória de 32 bytes em base64url e configure a mesma variável nos ambientes da Vercel.
+
+Os provedores planejados são Catho, Sólides, LinkedIn e Indeed. Catho possui API de vagas para empresas; a Sólides fornece uma API REST autenticada por token de integração; LinkedIn Talent Solutions e Indeed exigem aprovação/parceria para os fluxos de ATS, publicação e candidaturas. Não usar scraping ou login automatizado nessas plataformas.
 
 ## Banco Neon
 

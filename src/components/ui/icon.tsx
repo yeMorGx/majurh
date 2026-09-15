@@ -14,9 +14,12 @@ export type IconName =
   | 'file-text'
   | 'git-branch'
   | 'image'
+  | 'eye'
+  | 'eye-off'
   | 'kanban'
   | 'lightbulb'
   | 'list-checks'
+  | 'mail'
   | 'layout-dashboard'
   | 'log-out'
   | 'menu'
@@ -69,6 +72,9 @@ export function Icon({ name, size = 18, strokeWidth = 1.8, className }: IconProp
     'file-text': <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></>,
     'git-branch': <><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M6 9v1a8 8 0 0 0 8 8h1" /><circle cx="18" cy="6" r="3" /><path d="M18 9v3" /></>,
     image: <><rect width="18" height="18" x="3" y="3" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>,
+    eye: <><path d="M2.5 12s3.5-5 9.5-5 9.5 5 9.5 5-3.5 5-9.5 5-9.5-5-9.5-5Z" /><circle cx="12" cy="12" r="2.2" /></>,
+    'eye-off': <><path d="m3 3 18 18" /><path d="M10.6 6.9A10.5 10.5 0 0 1 12 7c6 0 9.5 5 9.5 5a17.7 17.7 0 0 1-3.2 3.3M6.7 6.7C4 8.4 2.5 12 2.5 12s3.5 5 9.5 5c1.3 0 2.5-.3 3.6-.8" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
+    mail: <><rect width="18" height="14" x="3" y="5" rx="2" /><path d="m3 7 9 6 9-6" /></>,
     kanban: <><rect width="18" height="16" x="3" y="4" rx="2" /><path d="M9 4v9M15 4v5" /></>,
     lightbulb: <><path d="M9 18h6" /><path d="M10 22h4" /><path d="M8.3 14.5A6 6 0 1 1 16 14.5c-.8.6-1 1.1-1 2.5H9c0-1.4-.2-1.9-.7-2.5Z" /></>,
     'list-checks': <><path d="m3 6 2 2 3-3" /><path d="M11 6h10M11 12h10M11 18h10" /><path d="m3 12 2 2 3-3" /><path d="m3 18 2 2 3-3" /></>,
