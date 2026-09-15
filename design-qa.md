@@ -34,7 +34,7 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 3. Captura final: os elementos decorativos foram incorporados como asset derivado do mockup e os y-points dos campos, botão e controles inferiores foram nivelados.
 4. Iteração anterior: o wordmark foi corrigido para `Maju RH`, os campos receberam labels/placeholders e os quadrados foram convertidos em botões desativados para futuras formas de login.
 5. Iteração anterior: campos, círculos, botão e espaçamentos foram compactados; a largura mobile foi limitada com `calc(100vw - 40px)` para impedir corte horizontal.
-6. Iteração atual: a paleta global foi trocada para vinho/coral, os quatro controles inferiores passaram a exibir logos locais e o logo principal recebeu rotação 3D suave no hover via Three.js.
+6. Iteração atual: a paleta global foi trocada para vinho/coral, os quatro controles inferiores passaram a exibir logos locais e cada logo de método recebeu rotação 3D suave no hover via Three.js; a logo principal permanece estática.
 7. Smoke responsivo: abaixo de 860px a arte lateral é removida e o formulário passa a usar toda a largura disponível; não existe mockup mobile separado para uma comparação de fidelidade.
 
 ## Interações e validações
@@ -43,8 +43,8 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 - Inputs mantêm `required`, `autoComplete`, labels acessíveis, placeholders orientativos e submit do Neon Auth.
 - O controle de senha alterna entre `password` e `text` no componente.
 - Os quatro métodos adicionais aparecem com logos locais e permanecem desativados até cada provedor ter autenticação implementada.
-- O logo principal usa Three.js em canvas transparente; hover, foco e toque disparam uma volta no eixo Y e os métodos alternativos permanecem estáticos.
-- `prefers-reduced-motion` desativa a rotação e mantém o fallback visual do logo.
+- Cada logo de método usa Three.js em canvas transparente; o hover dispara uma volta no eixo Y sem mover o card.
+- `prefers-reduced-motion` desativa as rotações e mantém os fallbacks visuais das logos.
 - `npm run typecheck`: passou.
 - `npm run build`: passou; 14 páginas estáticas geradas e APIs compiladas.
 - Captura visual Chromium: concluída em `1920 × 1080`.

@@ -119,7 +119,7 @@ export default function LoginPage() {
         <div className="login-form-wrap login-reference-form-wrap">
           <div className="login-reference-brand">
             <div className={`login-reference-mark ${organization?.brand_logo_path ? 'is-custom' : ''}`}>
-              <ThreeLogo src={logoPath} alt={`Logo de ${organization?.name || defaultLoginWordmark}`} />
+              <img src={logoPath} alt="" />
             </div>
             <span className="login-reference-wordmark">{organization?.name || defaultLoginWordmark}</span>
           </div>
@@ -148,7 +148,7 @@ export default function LoginPage() {
           <div className="login-alt-methods" role="group" aria-label="Outras formas de login">
             {loginMethods.map((method) => (
               <button className="login-alt-method" key={method.name} type="button" disabled title={`${method.name} disponível em breve`} aria-label={`${method.name}, disponível em breve`}>
-                <img src={method.logo} alt="" />
+                <ThreeLogo src={method.logo} alt={`${method.name} logo`} className="login-method-logo" decorative />
                 <span className="visually-hidden">{method.name} — disponível em breve</span>
               </button>
             ))}

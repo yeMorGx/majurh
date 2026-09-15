@@ -231,8 +231,8 @@ Modal ou painel lateral com título **Registrar desistência**. A ordem dos camp
 ## 8. Movimento e estados
 
 - Usar transições de 150–200 ms para hover, foco e abertura de menus.
-- A única assinatura 3D da tela de login é o logo principal, renderizado com Three.js em canvas transparente; ao hover, foco ou toque, ele gira uma vez no eixo Y e retorna centralizado.
-- Manter os demais cards e métodos de login estáticos; não animar cada card individual.
+- A única assinatura 3D da tela de login fica nas logos dos métodos alternativos, renderizadas com Three.js em canvas transparente; no hover, cada logo gira uma vez no eixo Y e retorna centralizada.
+- Manter a logo principal e os cards estáticos; a rotação não deve mover o container do método.
 - Upload pode ter progresso visível; mudança de status pode destacar a nova etapa por um instante curto.
 - Respeitar `prefers-reduced-motion` e remover deslocamentos para quem preferir menos movimento.
 - Sempre criar estados `loading`, `empty`, `error`, `success` e `disabled` antes de considerar um componente pronto.

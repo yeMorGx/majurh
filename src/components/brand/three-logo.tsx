@@ -7,6 +7,7 @@ type ThreeLogoProps = {
   src: string;
   alt: string;
   className?: string;
+  decorative?: boolean;
 };
 
 const DEFAULT_LOGO_ASPECT = 125 / 51;
@@ -18,7 +19,7 @@ function easeInOutCubic(progress: number) {
     : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 }
 
-export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
+export function ThreeLogo({ src, alt, className = '', decorative = false }: ThreeLogoProps) {
   const mountRef = useRef<HTMLDivElement>(null);
   const [textureReady, setTextureReady] = useState(false);
 
@@ -37,6 +38,7 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
       antialias: true,
       powerPreference: 'low-power',
     });
+    renderer.setClearColor(0x000000, 0);
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.domElement.setAttribute('aria-hidden', 'true');
@@ -47,7 +49,6 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
 
     let geometry = new THREE.PlaneGeometry(2.8, 2.8 / DEFAULT_LOGO_ASPECT);
     const material = new THREE.MeshBasicMaterial({
-      alphaTest: 0.01,
       side: THREE.DoubleSide,
       transparent: true,
     });
@@ -71,6 +72,7 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
     let animationFrame = 0;
     let isAnimating = false;
     let texture: THREE.Texture | null = null;
+    let logoImage: HTMLImageElement | null = null;
 
     const playHoverTurn = () => {
       if (isAnimating || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
@@ -99,19 +101,30 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
       animationFrame = requestAnimationFrame(animate);
     };
 
-    const loader = new THREE.TextureLoader();
-    loader.load(
-      src,
-      (loadedTexture) => {
-        texture = loadedTexture;
-        texture.colorSpace = THREE.SRGBColorSpace;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
-        texture.needsUpdate = true;
+    logoImage = new Image();
+    logoImage.decoding = 'async';
+    logoImage.onload = () => {
+      if (!logoImage) return;
 
-        const image = texture.image as { width?: number; height?: number } | undefined;
-        const imageAspect = image?.width && image?.height ? image.width / image.height : DEFAULT_LOGO_ASPECT;
+      const imageWidth = logoImage.naturalWidth || 150;
+      const imageHeight = logoImage.naturalHeight || 150;
+      const raster = document.createElement('canvas');
+      raster.width = imageWidth;
+      raster.height = imageHeight;
+      const context = raster.getContext('2d');
+      if (!context) return;
+
+      context.clearRect(0, 0, imageWidth, imageHeight);
+      context.drawImage(logoImage, 0, 0, imageWidth, imageHeight);
+
+      texture = new THREE.CanvasTexture(raster);
+      texture.colorSpace = THREE.SRGBColorSpace;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+      texture.needsUpdate = true;
+
+      const imageAspect = imageWidth / imageHeight;
         geometry.dispose();
         geometry = new THREE.PlaneGeometry(2.8, 2.8 / imageAspect);
         logo.geometry = geometry;
@@ -119,10 +132,10 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
         material.needsUpdate = true;
         setTextureReady(true);
         resize();
-      },
-      undefined,
-      () => render(),
-    );
+        requestAnimationFrame(render);
+    };
+    logoImage.onerror = () => render();
+    logoImage.src = src;
 
     mount.addEventListener('pointerenter', playHoverTurn);
     mount.addEventListener('pointerdown', playHoverTurn);
@@ -137,6 +150,10 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
       geometry.dispose();
       material.dispose();
       texture?.dispose();
+      if (logoImage) {
+        logoImage.onload = null;
+        logoImage.onerror = null;
+      }
       renderer.dispose();
       renderer.domElement.remove();
     };
@@ -146,9 +163,10 @@ export function ThreeLogo({ src, alt, className = '' }: ThreeLogoProps) {
     <div
       ref={mountRef}
       className={`three-logo ${textureReady ? 'is-ready' : ''} ${className}`.trim()}
-      role="img"
-      aria-label={alt}
-      tabIndex={0}
+      role={decorative ? undefined : 'img'}
+      aria-label={decorative ? undefined : alt}
+      aria-hidden={decorative ? true : undefined}
+      tabIndex={decorative ? -1 : 0}
     >
       <img className="three-logo-fallback" src={src} alt="" aria-hidden="true" />
     </div>
