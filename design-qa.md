@@ -50,6 +50,7 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 - O submit exibe somente o cachorro da marca durante o carregamento; o estado foi confirmado no DOM como `status` e a tentativa inválida retorna ao formulário com alerta.
 - `prefers-reduced-motion` desativa as rotações e mantém os fallbacks visuais das logos.
 - O shell autenticado recebeu a camada M3: drawer com `aria-current`, top app bar, busca tonal, cards em superfícies semânticas, controles com estados de foco e raios consistentes.
+- A organização recebeu uma composição de brand studio: hero do tenant, hierarquia numerada, paleta com função, preview em moldura de navegador, status ao vivo e área de acessos separada.
 - `npm run typecheck`: passou.
 - `npm run build`: passou; 14 páginas estáticas geradas e APIs compiladas.
 - Captura visual Chromium: concluída em `1920 × 1080`.

@@ -194,6 +194,14 @@ Copy de exemplo:
 - **Ver candidatos pendentes**
 - **João Silva mudou para Documentação**
 
+### Organização
+
+- Tratar a tela como um brand studio, não como um formulário cru: abrir com um hero que explique o tenant e fechar com o espaço de equipe/convidados.
+- Dividir a edição em três decisões legíveis: identidade, papéis de cor e experiência de entrada. Cada seção pode usar um marcador de sequência curto porque aqui há uma ordem real de configuração.
+- Sempre mostrar a consequência antes do salvamento: a prévia de login fica na coluna lateral, com moldura de navegador, estado **Ao vivo** e cópia fiel dos campos editados.
+- Upload de logo e banner é um bloco de asset com ícone, estado do arquivo e limite explícito; imagens nunca são configuradas por URL.
+- Cores devem ser apresentadas como papéis (“marca e navegação”, “foco e progresso”), não como dois hexadecimais soltos.
+
 ### Lista de candidatos
 
 - Header com título, contagem e botão **Adicionar candidato**.

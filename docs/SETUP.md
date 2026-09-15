@@ -15,6 +15,8 @@ A composição padrão da tela usa os assets `public/brand/majurh-dog-mark.svg` 
 
 O ambiente autenticado segue Material Design 3 como sistema de composição: navigation drawer lateral com seleção tonal, top app bar com busca, superfícies em camadas, contornos semânticos, botões por nível de ênfase, campos com foco visível e estados de loading/empty/error/success/disabled. A identidade Majurh permanece nos papéis de cor e na trilha de processo; não é uma cópia literal da paleta do Material.
 
+A página **Organização** usa a mesma base como um brand studio: o hero apresenta o tenant, o formulário é dividido em identidade, papéis de cor e experiência de entrada, e a coluna lateral mostra uma prévia de login com janela, status ao vivo e confirmação da publicação. A alteração de logo e banner continua limitada a upload de arquivo, nunca URL.
+
 As logos dos métodos alternativos da tela usam Three.js em canvases transparentes isolados. No hover, cada marca faz uma rotação 3D curta no eixo Y e retorna centralizada; a logo principal permanece como SVG normal e os cards não se movimentam. O componente usa cada SVG local como textura, mantém um fallback enquanto carrega e respeita `prefers-reduced-motion`.
 
 Durante o preenchimento, o e-mail sugere domínios comuns localmente e indica quando o formato está reconhecido. A senha exibe força progressiva com barras e pontos ao redor do controle circular, e o olho alterna entre mostrar e ocultar com microanimação. No submit, o formulário é substituído temporariamente pelo cachorro da marca em estado de carregamento; o cachorro pisca enquanto a autenticação aguarda resposta. Esse feedback não valida se o endereço existe e não envia sugestões para serviços externos.
