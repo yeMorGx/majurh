@@ -3,8 +3,8 @@
 ## Evidências
 
 - source visual truth path: `C:\Users\Gabriel Morgado\Downloads\Login.png`
-- implementation screenshot path: `C:\Users\GABRIE~1\AppData\Local\Temp\majurh-login-qa\login-desktop-current.png`
-- comparação combinada: `C:\Users\GABRIE~1\AppData\Local\Temp\majurh-login-qa\design-qa-comparison-current.png` (mockup à esquerda, implementação à direita)
+- implementation screenshot path: `C:\Users\GABRIE~1\AppData\Local\Temp\majurh-login-qa\login-desktop-compact.png`
+- comparação combinada: `C:\Users\GABRIE~1\AppData\Local\Temp\majurh-login-qa\design-qa-comparison-compact.png` (mockup à esquerda, implementação à direita)
 - viewport CSS: `1920 × 1080`
 - dimensões do source: `1920 × 1080 px`
 - dimensões da implementação: `1920 × 1080 px`
@@ -13,7 +13,7 @@
 
 ## Comparação
 
-Na comparação combinada, a divisão do painel (`39,58% / 60,42%`), o recorte da arte, a marca, o tagline, a geometria dos campos, o botão e os quatro controles inferiores mantêm a composição do mockup. A implementação mantém os campos como inputs reais, acrescenta labels e placeholders orientativos e usa ícones funcionais nos controles circulares; o segundo círculo alterna mostrar/ocultar senha. Os quatro controles inferiores são botões semanticamente desativados, reservados para futuras formas de login.
+Na comparação combinada, a divisão do painel (`39,58% / 60,42%`), o recorte da arte, a marca, o tagline, a geometria dos campos, o botão e os quatro controles inferiores mantêm a composição do mockup. A última iteração compacta o formulário para uma leitura mais leve, sem perder a hierarquia: campos de 60 px, círculos de 60 px, botão de 84 px e largura máxima de 475 px. A implementação mantém os campos como inputs reais, acrescenta labels e placeholders orientativos e usa ícones funcionais nos controles circulares; o segundo círculo alterna mostrar/ocultar senha. Os quatro controles inferiores são botões semanticamente desativados, reservados para futuras formas de login.
 
 ### Superfícies de fidelidade
 
@@ -32,8 +32,9 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 1. Primeira captura: o fluxo ainda exibia heading/labels no painel e não reproduzia os círculos, o wordmark e os quadrados do mockup. Ajuste: composição foi reduzida ao logo, tagline, duas linhas de input, ação e asset dos quadrados.
 2. Segunda captura: a estrutura ficou alinhada, mas o wordmark/tagline e o botão tinham escala diferente. Ajuste: proporções tipográficas e deslocamentos verticais foram refinados.
 3. Captura final: os elementos decorativos foram incorporados como asset derivado do mockup e os y-points dos campos, botão e controles inferiores foram nivelados.
-4. Iteração atual: o wordmark foi corrigido para `Maju RH`, os campos receberam labels/placeholders e os quadrados foram convertidos em botões desativados para futuras formas de login. Evidência: comparação combinada atual acima.
-5. Smoke responsivo: abaixo de 860px a arte lateral é removida e o formulário passa a usar toda a largura disponível; não existe mockup mobile separado para uma comparação de fidelidade.
+4. Iteração anterior: o wordmark foi corrigido para `Maju RH`, os campos receberam labels/placeholders e os quadrados foram convertidos em botões desativados para futuras formas de login.
+5. Iteração atual: campos, círculos, botão e espaçamentos foram compactados; a largura mobile foi limitada com `calc(100vw - 40px)` para impedir corte horizontal.
+6. Smoke responsivo: abaixo de 860px a arte lateral é removida e o formulário passa a usar toda a largura disponível; não existe mockup mobile separado para uma comparação de fidelidade.
 
 ## Interações e validações
 
