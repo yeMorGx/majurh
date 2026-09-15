@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
-import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { getBrandStyle, getOrganizationAssetUrl, normalizeHex, platformBrand, type OrganizationBrand } from '@/lib/branding';
 import { useEffect, useState, type CSSProperties } from 'react';
 
 type FormState = {
@@ -116,48 +116,61 @@ export function OrganizationClient() {
   if (loading) return <div className="loading-state">Carregando organização</div>;
   if (!organization) return <div className="form-error" role="alert">{error || 'Organização não encontrada.'}</div>;
 
+  const dirty = JSON.stringify(form) !== JSON.stringify(toForm(organization));
+  const logo = getOrganizationAssetUrl(organization, 'logo') || platformBrand.logoPath;
+  const banner = getOrganizationAssetUrl(organization, 'login-banner') || '/brand/majurh-login-art.png';
+
   return (
-    <div className="organization-page">
-      <section className="organization-hero-card">
-        <div className="organization-hero-copy">
-          <div className="organization-hero-kicker"><span className="organization-hero-icon"><Icon name="briefcase" size={17} /></span><span>Espaço B2B</span><span className="organization-status-pill"><i />Ativo</span></div>
-          <h1>{form.name || organization.name}</h1>
-          <p>O centro de identidade do seu workspace. Ajuste a presença da marca e acompanhe como ela aparece para sua equipe.</p>
-          <div className="organization-hero-meta"><div><span>Slug do espaço</span><strong className="mono">/{organization.slug}</strong></div><div><span>Plataforma</span><strong>{platformBrand.name}</strong></div></div>
-        </div>
-        <div className="organization-hero-visual" aria-hidden="true"><span className="organization-hero-orbit organization-hero-orbit-one" /><span className="organization-hero-orbit organization-hero-orbit-two" /><div className="organization-hero-brand-card" style={getBrandStyle(previewOrganization) as CSSProperties}><div className="organization-hero-brand-mark"><img src={getOrganizationAssetUrl(organization, 'logo') || platformBrand.logoPath} alt="" /></div><div><span>Marca publicada</span><strong>{form.name || organization.name}</strong><small>Identidade aplicada ao workspace</small></div><Icon name="check-circle" size={22} /></div></div>
-      </section>
-
-      <div className="page-heading organization-page-heading">
-        <div><p className="eyebrow">Identidade e presença</p><h2>Organização</h2><p>Configure o que sua equipe e as pessoas convidadas vão enxergar em cada acesso.</p></div>
-        <div className="heading-actions"><a className="button button-secondary" href={loginUrl || `/login?org=${organization.slug}`} target="_blank" rel="noreferrer"><Icon name="eye" size={16} />Ver tela de login <Icon name="arrow-up-right" size={15} /></a></div>
-      </div>
-
+    <div className="brand-studio">
+      <header className="studio-heading">
+        <div><p className="studio-overline">Seu espaço, sua identidade</p><h1>Organização<span>.</span></h1><p>Uma marca reconhecível em cada encontro com a sua equipe.</p></div>
+        <a className="button button-secondary" href={loginUrl} target="_blank" rel="noreferrer"><Icon name="arrow-up-right" />Abrir login</a>
+      </header>
       {error && <div className="form-error" role="alert">{error}</div>}
-      {message && <div className="form-success" role="status"><Icon name="check-circle" size={16} />{message}</div>}
-      {!canManage && <div className="setup-callout organization-readonly-note"><Icon name="briefcase" size={18} /><div><strong>Configuração administrada pelo responsável.</strong><p>Você pode consultar este espaço, mas somente um administrador pode alterar a marca e a tela de login.</p></div></div>}
+      {message && <div className="form-success" role="status">{message}</div>}
+      {!canManage && <p className="studio-notice">Você está no modo de consulta. A edição está disponível para administradores.</p>}
+      <form onSubmit={save} className="studio-grid" aria-busy={saving || !!uploadingAsset} style={{ ...getBrandStyle(previewOrganization), '--studio-on-brand': foregroundFor(form.primaryColor) } as CSSProperties}>
+        <section className="studio-tile studio-identity">
+          <div className="studio-tile-top"><span><Icon name="briefcase" />Identidade</span><span className="studio-tag">/{organization.slug}</span></div>
+          <div className="studio-identity-art"><div className="studio-logo-shape"><img src={logo} alt="Logo da organização" /></div><div><span>O lugar da sua equipe</span><strong>{form.name || organization.name}</strong><small>Powered by Maju RH</small></div></div>
+          <div className="field"><label htmlFor="organization-name">Nome da organização</label><input className="form-input" id="organization-name" required minLength={2} maxLength={120} value={form.name} disabled={!canManage} onChange={(e) => update('name', e.target.value)} /></div>
+          <label className="studio-upload"><Icon name="upload" /><span>{uploadingAsset === 'logo' ? 'Enviando logo…' : 'Trocar logo'}<small>PNG, JPG, WEBP ou SVG · até 5 MB</small></span><input aria-label="Enviar logo da organização" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={!canManage || !!uploadingAsset} onChange={(e) => uploadAsset('logo', e.target.files?.[0])} /></label>
+          <p className="studio-help">Os arquivos são aplicados assim que o envio termina.</p>
+        </section>
 
-      <div className="organization-layout">
-        <form className="panel organization-form organization-form-panel" onSubmit={save}>
-          <div className="organization-form-intro"><span className="organization-section-number">01</span><div><p className="eyebrow">Sistema de marca</p><h2>Identidade da organização</h2><p>O nome, o símbolo e as cores que orientam o ambiente autenticado.</p></div></div>
-          <div className="field"><label htmlFor="organization-name">Nome exibido</label><input className="form-input" id="organization-name" value={form.name} onChange={(event) => update('name', event.target.value)} minLength={2} maxLength={120} required disabled={!canManage} /><small>Esse nome aparece no drawer, no título da aba e na tela de login.</small></div>
-          <div className="organization-file-grid">
-            <div className="organization-file-field"><div className="organization-file-heading"><span className="organization-file-icon"><Icon name="image" size={17} /></span><div><label htmlFor="organization-logo">Logo da organização</label><small>Arquivo da marca</small></div></div><input className="form-input organization-file-input" id="organization-logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => uploadAsset('logo', event.target.files?.[0])} disabled={!canManage || uploadingAsset !== ''} /><span className="organization-file-state">{uploadingAsset === 'logo' ? 'Enviando arquivo…' : organization.brand_logo_path ? 'Arquivo salvo no Blob privado.' : 'Usando a logo padrão do Majurh.'}</span></div>
-            <div className="organization-file-field"><div className="organization-file-heading"><span className="organization-file-icon organization-file-icon-accent"><Icon name="upload" size={17} /></span><div><label htmlFor="login-banner">Banner da tela de login</label><small>Imagem de ambientação</small></div></div><input className="form-input organization-file-input" id="login-banner" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" onChange={(event) => uploadAsset('login-banner', event.target.files?.[0])} disabled={!canManage || uploadingAsset !== ''} /><span className="organization-file-state">{uploadingAsset === 'login-banner' ? 'Enviando arquivo…' : organization.brand_login_banner_path ? 'Arquivo salvo no Blob privado.' : 'Usando a composição padrão.'}</span></div>
+        <section className="studio-tile studio-colors">
+          <div className="studio-tile-top"><span><Icon name="settings" />Cores da marca</span></div>
+          <h2>Encontre o seu tom.</h2><p>A combinação que acompanha sua equipe pelo espaço.</p>
+          <div className="studio-swatches" aria-hidden="true"><i /><i /><i /><i /></div>
+          <div className="studio-color-fields">
+            {([{key:'primaryColor', label:'Principal', fallback:'#4a1119'}, {key:'accentColor',label:'Destaque',fallback:'#c4512e'}] as const).map(({key,label,fallback}) => <label key={key} className="studio-color-field"><span>{label}</span><div><input type="color" aria-label={`Selecionar cor ${label.toLowerCase()}`} value={hexOrDefault(form[key],fallback)} disabled={!canManage} onChange={(e) => update(key,e.target.value)} /><input aria-label={`Código da cor ${label.toLowerCase()}`} value={form[key]} placeholder={fallback} pattern="#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})" disabled={!canManage} onChange={(e) => update(key,e.target.value)} /></div></label>)}
           </div>
-          <div className="organization-color-section"><div className="organization-subsection-heading"><div><p className="eyebrow">02 · Papéis de cor</p><h3>Uma paleta com função</h3></div><span>Preview ao vivo</span></div><div className="brand-color-grid"><div className="organization-color-card"><div className="organization-color-copy"><span>Primária</span><strong>Marca e navegação</strong></div><div className="brand-color-control"><input type="color" value={hexOrDefault(form.primaryColor, '#4a1119')} onChange={(event) => update('primaryColor', event.target.value)} aria-label="Selecionar cor principal" disabled={!canManage} /><input className="form-input" id="organization-primary" value={form.primaryColor} onChange={(event) => update('primaryColor', event.target.value)} placeholder="#4a1119" disabled={!canManage} /></div></div><div className="organization-color-card"><div className="organization-color-copy"><span>Destaque</span><strong>Foco e progresso</strong></div><div className="brand-color-control"><input type="color" value={hexOrDefault(form.accentColor, '#c4512e')} onChange={(event) => update('accentColor', event.target.value)} aria-label="Selecionar cor de destaque" disabled={!canManage} /><input className="form-input" id="organization-accent" value={form.accentColor} onChange={(event) => update('accentColor', event.target.value)} placeholder="#c4512e" disabled={!canManage} /></div></div></div></div>
+          <div className="studio-presets"><span>Experimentar</span>{[{name:'Vinho',p:'#4a1119',a:'#c4512e'},{name:'Ameixa',p:'#49335c',a:'#8a5eaa'},{name:'Oceano',p:'#183c53',a:'#317d9c'}].map(p => <button type="button" key={p.name} disabled={!canManage} title={p.name} aria-label={`Aplicar paleta ${p.name}`} style={{background:p.p}} onClick={() => {update('primaryColor',p.p);update('accentColor',p.a);}} />)}</div>
+        </section>
 
-          <div className="organization-form-divider"><span className="organization-section-number">03</span><div><p className="eyebrow">Experiência de entrada</p><h3>O primeiro contato com sua equipe</h3><p>Personalize os textos exibidos junto do banner. A URL da organização abre essa experiência para quem possui um acesso.</p></div></div>
-          <div className="field"><label htmlFor="login-kicker">Texto de apoio</label><input className="form-input" id="login-kicker" value={form.kicker} onChange={(event) => update('kicker', event.target.value)} maxLength={80} placeholder="Sua empresa · B2B" disabled={!canManage} /></div>
-          <div className="field"><label htmlFor="login-headline">Título do banner</label><input className="form-input" id="login-headline" value={form.headline} onChange={(event) => update('headline', event.target.value)} maxLength={140} placeholder="O histórico certo para a próxima decisão." disabled={!canManage} /></div>
-          <div className="field"><label htmlFor="login-description">Descrição da tela</label><textarea className="form-textarea" id="login-description" value={form.description} onChange={(event) => update('description', event.target.value)} maxLength={240} placeholder="Uma visão calma do fluxo de pessoas, do primeiro contato à admissão." disabled={!canManage} /></div>
-          {canManage && <div className="form-actions"><button className="button button-primary" disabled={saving || uploadingAsset !== ''}>{saving ? 'Salvando identidade…' : 'Salvar alterações'}<Icon name="check" size={16} /></button></div>}
-        </form>
+        <section className="studio-tile studio-preview">
+          <div className="studio-tile-top"><span><Icon name="eye" />Sua porta de entrada</span><span className="studio-tag">{dirty ? 'Prévia · não salva' : 'Prévia'}</span></div>
+          <div className="studio-login-mini" aria-label="Prévia ilustrativa do login">
+            <div className="studio-login-form"><img src={logo} alt="" /><strong>{form.name || organization.name}</strong><small>Seu controle de contratação</small><span className="studio-mock-field">E-mail corporativo</span><span className="studio-mock-field">••••••••</span><span className="studio-mock-button">Entrar <Icon name="arrow-up-right" size={12} /></span></div>
+            <div className="studio-login-image"><img src={banner} alt="Banner do login" />{(form.kicker || form.headline || form.description) && <div><small>{form.kicker}</small><strong>{form.headline}</strong><p>{form.description}</p></div>}</div>
+          </div>
+          <label className="studio-upload studio-banner-upload"><Icon name="image" /><span>{uploadingAsset === 'login-banner' ? 'Enviando imagem…' : 'Escolher imagem do login'}<small>Arquivo de até 5 MB · envio aplicado imediatamente</small></span><input aria-label="Enviar banner do login" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" disabled={!canManage || !!uploadingAsset} onChange={(e) => uploadAsset('login-banner', e.target.files?.[0])} /></label>
+        </section>
 
-        <aside className="organization-preview-wrap"><div className="organization-preview-heading"><div><p className="eyebrow">Prévia da experiência</p><strong>Tela de login</strong></div><span><i />Ao vivo</span></div><div className="organization-login-preview" style={getBrandStyle(previewOrganization) as CSSProperties}><div className="organization-preview-windowbar"><span>login/{organization.slug}</span><div><i /><i /><i /></div></div><div className="organization-preview-brand"><div className="brand-mark brand-mark-logo"><img src={getOrganizationAssetUrl(organization, 'logo') || platformBrand.logoPath} alt="" /></div><strong>{form.name || organization.name}</strong><span>·</span><small>acesso interno</small></div><div className="organization-preview-art" style={previewBannerStyle(organization)}><span>{form.kicker || `${form.name || organization.name} · B2B`}</span><strong>{form.headline || 'O histórico certo para a próxima decisão.'}</strong><small>{form.description || 'Uma visão calma do fluxo de pessoas, do primeiro contato à admissão.'}</small><div className="organization-preview-art-line" /></div></div><div className="organization-preview-insight"><span className="organization-insight-icon"><Icon name="check" size={14} /></span><div><strong>Identidade pronta para publicar</strong><p>As alterações aparecem no próximo acesso da equipe.</p></div></div><p className="organization-preview-note">Logo e banner são sempre enviados como arquivo e armazenados no Blob privado. A autenticação continua protegida pelo Neon Auth.</p></aside>
-      </div>
+        <section className="studio-tile studio-copy">
+          <div className="studio-tile-top"><span><Icon name="file-text" />Mensagem de boas-vindas</span></div>
+          <h2>O primeiro contato conta.</h2>
+          <div className="field"><label htmlFor="login-kicker">Texto de apoio</label><input className="form-input" id="login-kicker" value={form.kicker} maxLength={80} placeholder="Bem-vindo à nossa equipe" disabled={!canManage} onChange={(e) => update('kicker',e.target.value)} /></div>
+          <div className="field"><label htmlFor="login-headline">Título do banner</label><input className="form-input" id="login-headline" value={form.headline} maxLength={140} placeholder="Pessoas que fazem acontecer." disabled={!canManage} onChange={(e) => update('headline',e.target.value)} /></div>
+          <div className="field"><label htmlFor="login-description">Descrição</label><textarea className="form-textarea" id="login-description" value={form.description} maxLength={240} placeholder="Uma mensagem para quem chega." disabled={!canManage} onChange={(e) => update('description',e.target.value)} /></div>
+        </section>
 
-      <section className="panel organization-access-panel"><div className="organization-access-heading"><div className="organization-section-number">04</div><div><p className="eyebrow">Pessoas do workspace</p><h2>Equipe e convites</h2><p>Novas pessoas entram somente por um convite criado na administração.</p></div><span className="organization-access-badge"><Icon name="users" size={15} />Acesso controlado</span></div><div className="organization-access-row"><div className="access-pending-icon"><Icon name="users" size={20} /></div><div><strong>Gerenciar acessos com segurança</strong><p>Crie links de uso único, escolha o papel de cada pessoa e revogue convites pendentes.</p></div><a className="button button-secondary" href="/administracao">Abrir administração <Icon name="arrow-up-right" size={15} /></a></div></section>
+        <section className="studio-tile studio-team">
+          <div className="studio-team-symbol" aria-hidden="true"><Icon name="users" size={36} /></div><div><span className="studio-overline">Construído em equipe</span><h2>As pessoas fazem o espaço.</h2><p>Convide pessoas e defina o papel de cada uma na organização.</p>{canManage ? <a className="button" href="/administracao">Gerenciar convites <Icon name="arrow-up-right" /></a> : <p>Peça novos convites ao administrador.</p>}</div>
+        </section>
+
+        <footer className="studio-savebar"><div><Icon name={dirty ? 'clock' : 'check-circle'} /><span>{saving ? 'Salvando alterações…' : dirty ? 'Você tem alterações para salvar' : 'Identidade atualizada'}<small>Nome, cores e textos são publicados ao salvar.</small></span></div>{canManage && <button className="button button-primary" disabled={!dirty || saving || !!uploadingAsset}>Salvar alterações <Icon name="check" /></button>}</footer>
+      </form>
     </div>
   );
 }
@@ -165,8 +178,17 @@ export function OrganizationClient() {
 function toForm(organization: OrganizationBrand): FormState {
   return { name: organization.name, primaryColor: organization.brand_primary_color || '', accentColor: organization.brand_accent_color || '', kicker: organization.brand_login_kicker || '', headline: organization.brand_login_headline || '', description: organization.brand_login_description || '' };
 }
-function hexOrDefault(value: string, fallback: string) { return /^#[0-9a-f]{6}$/i.test(value) ? value : fallback; }
-function previewBannerStyle(organization: OrganizationBrand): CSSProperties {
-  const banner = getOrganizationAssetUrl(organization, 'login-banner');
-  return banner ? { backgroundImage: `linear-gradient(180deg, rgba(15, 77, 58, 0.12), rgba(15, 77, 58, 0.84)), url("${banner}")`, backgroundSize: 'cover', backgroundPosition: 'center' } : {};
+function hexOrDefault(value: string, fallback: string) {
+  const hex = normalizeHex(value) || fallback;
+  return hex.length === 4 ? `#${hex.slice(1).split('').map((char) => char + char).join('')}` : hex;
+}
+
+function foregroundFor(value: string) {
+  const hex = hexOrDefault(value, '#4a1119');
+  const channels = [1, 3, 5].map((start) => {
+    const channel = parseInt(hex.slice(start, start + 2), 16) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  return luminance > 0.179 ? '#000000' : '#ffffff';
 }

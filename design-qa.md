@@ -66,4 +66,16 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 - [x] White-label por organização preservado.
 - [x] Responsividade mobile mantida ocultando a arte lateral em telas estreitas.
 
-final result: passed
+final result: passed (registro histórico do login; consultar a revisão abaixo para a etapa atual)
+
+## Revisão de organização — 15/09/2026
+
+- A composição numerada anterior foi substituída por bento: identidade e paleta na primeira linha, prévia do login e textos na segunda, equipe separada abaixo.
+- A camada `src/app/(app)/workspace.css` é importada pelo layout autenticado. Sidebar com seleção tonal em cápsula e transições de forma; login público não recebe este novo stylesheet.
+- Paletas Vinho, Ameixa e Oceano editam o rascunho. Nome, cores e textos dependem de salvar; uploads continuam sendo aplicados imediatamente, com esse comportamento informado na interface.
+- Texto sobre a cor principal recebe preto ou branco por luminância; códigos curtos de cor são expandidos no seletor nativo. Foco e redução de movimento preservados.
+- Inspeção visual no navegador interno: desktop e 390 × 844. No mobile, largura do documento de 375 px para viewport de 390 px, sem overflow horizontal.
+- Limite dessa evidência: renderização estática do componente real com organização fictícia e sidebar simplificada. Não valida autenticação, persistência, upload, navegação mobile ou handlers interativos em produção.
+- Compilação Next e etapa TypeScript passaram. A build completa falhou na coleta de dados porque `NEON_AUTH_BASE_URL` está ausente no ambiente local. Nenhum arquivo de ambiente ou credencial foi alterado.
+- Detector mecânico de UI não reportou achados; isso não substitui testes funcionais.
+- Pendente: testar paletas, salvar, recarregar e enviar imagem com sessão autenticada e ambiente configurado antes de considerar o fluxo validado ponta a ponta.
