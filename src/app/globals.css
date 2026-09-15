@@ -341,7 +341,9 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .login-page-reference .eyebrow, .login-page-reference .login-form-wrap > h1 { display: none; }
 .login-page-reference .login-reference-tagline { max-width: 490px; margin: 0 0 60px; color: #252525; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(22px, 1.9vw, 28px); font-style: italic; line-height: 1.25; text-align: center; }
 .login-page-reference .login-tenant-note { display: none; }
-.login-page-reference .login-form { gap: 40px; }
+.login-page-reference .login-form { gap: 22px; }
+.login-reference-field-group { display: grid; gap: 8px; }
+.login-field-label { padding-left: 24px; color: #252525; font-size: 12px; font-weight: 650; letter-spacing: 0.04em; }
 .login-page-reference .login-reference-field { display: grid; grid-template-columns: minmax(0, 1fr) 69px; align-items: center; gap: 19px; }
 .login-page-reference .login-form .form-input { min-width: 0; min-height: 69px; padding: 0 24px; border: 1px solid #252525; border-radius: 35px; background: transparent; color: #252525; font-size: 15px; }
 .login-page-reference .login-form .form-input:focus { border-color: var(--vc-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vc-green) 20%, transparent); }
@@ -352,7 +354,9 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .login-field-action:focus-visible { outline: 2px solid var(--vc-green); outline-offset: 4px; }
 .login-page-reference .login-reference-submit { width: calc(100% - 40px); min-height: 100px; margin: 37px 20px 0; border-color: #252525; border-radius: 16px; background: #252525; color: white; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(32px, 3vw, 56px); font-style: italic; font-weight: 400; letter-spacing: -0.04em; }
 .login-page-reference .login-reference-submit:hover { border-color: #111; background: #111; }
-.login-reference-squares { display: block; width: 475px; height: 88px; margin: 41px 0 0 20px; object-fit: contain; }
+.login-alt-methods { display: grid; grid-template-columns: repeat(4, minmax(0, 88px)); justify-content: space-between; width: 475px; margin: 41px 0 0 20px; }
+.login-alt-method { width: 88px; height: 88px; padding: 0; border: 0; border-radius: 8px; background: #252525; }
+.login-alt-method:disabled { cursor: not-allowed; opacity: 1; }
 .login-page-reference .login-access-note { display: none; }
 .login-page-reference .setup-callout, .login-page-reference .form-error { margin-bottom: 18px; }
 .login-page-reference .setup-callout { font-size: 12px; }
@@ -469,7 +473,7 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .login-brand { margin-bottom: 52px; }
   .login-page-reference .login-reference-form-side { padding: 48px 24px; }
   .login-page-reference .login-reference-form-side { min-width: 0; }
-  .login-page-reference .login-reference-form-wrap { left: 0; width: 100%; min-width: 0; }
+  .login-page-reference .login-reference-form-wrap { left: 0; width: calc(100vw - 40px); max-width: 505px; min-width: 0; }
   .login-page-reference .login-reference-brand { margin-bottom: 42px; }
   .login-page-reference .login-reference-art-side { display: none; }
 }
@@ -525,7 +529,8 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .login-page-reference .login-form .form-input { min-height: 56px; padding: 0 18px; }
   .login-field-icon { width: 56px; height: 56px; }
   .login-page-reference .login-reference-submit { width: 100%; margin: 20px 0 0; min-height: 76px; }
-  .login-reference-squares { width: 100%; max-width: 475px; height: auto; margin: 30px auto 0; }
+  .login-alt-methods { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; margin: 30px auto 0; }
+  .login-alt-method { width: 100%; height: auto; aspect-ratio: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

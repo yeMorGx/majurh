@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 
 const defaultLoginLogoPath = '/brand/majurh-dog-mark.svg';
-const defaultLoginWordmark = 'MajurhRH';
+const defaultLoginWordmark = 'Maju RH';
 
 function isVercelPreviewDeployment() {
   if (typeof window === 'undefined') return false;
@@ -76,7 +76,7 @@ export default function LoginPage() {
   }, []);
 
   useEffect(() => {
-    document.title = organization?.name ? `${organization.name} · Majurh` : 'Majurh';
+    document.title = organization?.name || defaultLoginWordmark;
     const favicon = document.querySelector<HTMLLinkElement>('link[rel="icon"]') ?? document.createElement('link');
     favicon.rel = 'icon';
     favicon.href = getOrganizationAssetUrl(organization, 'logo') || defaultLoginLogoPath;
@@ -133,12 +133,17 @@ export default function LoginPage() {
             </div>
           )}
           <form className="login-form login-reference-form" onSubmit={handleSubmit}>
-            <div className="field login-reference-field"><label className="visually-hidden" htmlFor="email">E-mail</label><input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="" aria-label="E-mail" /><span className="login-field-icon" aria-hidden="true"><Icon name="mail" size={19} /></span></div>
-            <div className="field login-reference-field"><label className="visually-hidden" htmlFor="password">Senha</label><input className="form-input" id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="" aria-label="Senha" /><button className="login-field-icon login-field-action" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}><Icon name={showPassword ? 'eye-off' : 'eye'} size={19} /></button></div>
+            <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="email">E-mail corporativo</label><div className="login-reference-field"><input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu.email@empresa.com" /><span className="login-field-icon" aria-hidden="true"><Icon name="mail" size={19} /></span></div></div>
+            <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="password">Senha</label><div className="login-reference-field"><input className="form-input" id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" /><button className="login-field-icon login-field-action" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}><Icon name={showPassword ? 'eye-off' : 'eye'} size={19} /></button></div></div>
             {error && <div className="form-error" role="alert">{error}</div>}
             <button className="button button-primary login-reference-submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
           </form>
-          <img className="login-reference-squares" src="/brand/majurh-login-squares.png" alt="" aria-hidden="true" />
+          <div className="login-alt-methods" role="group" aria-label="Outras formas de login">
+            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 1, disponível em breve"><span className="visually-hidden">Em breve</span></button>
+            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 2, disponível em breve"><span className="visually-hidden">Em breve</span></button>
+            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 3, disponível em breve"><span className="visually-hidden">Em breve</span></button>
+            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 4, disponível em breve"><span className="visually-hidden">Em breve</span></button>
+          </div>
           <p className="login-access-note">Ainda não tem acesso? Solicite um convite ao administrador da sua organização.</p>
         </div>
       </section>
