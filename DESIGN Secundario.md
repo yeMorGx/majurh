@@ -95,6 +95,8 @@ O texto da interface é em sentence case e PT-BR: **Adicionar candidato**, **Agu
 - Cards: raio de 16 px, borda de 1 px, sombra mínima. Usar sombra somente em elementos flutuantes.
 - Shell externo, quando houver moldura no protótipo: raio de 24 px; em produção, respeitar o viewport e não criar uma “janela” desnecessária em telas pequenas.
 
+Implementação vigente do M3 no pós-login: o drawer usa 248 px no desktop, o top app bar usa 64 px, o conteúdo usa superfícies `surface`/`surface-container-low`/`surface-container-high`, cards principais usam `extra-large` e controles interativos usam `full` ou `medium` conforme o papel. A seleção da navegação é tonal e também exposta por `aria-current`; os tokens M3 são a camada de organização, não uma obrigação de copiar a aparência padrão do Material.
+
 ### Responsividade
 
 - Abaixo de 1100 px, reduzir a sidebar para estado recolhido com tooltip.

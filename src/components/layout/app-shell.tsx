@@ -143,7 +143,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {navItems.map((item) => {
             const active = pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href));
             return (
-              <Link className={`sidebar-link ${active ? 'is-active' : ''}`} href={item.href} key={item.href}>
+              <Link className={`sidebar-link ${active ? 'is-active' : ''}`} href={item.href} key={item.href} aria-current={active ? 'page' : undefined}>
                 <Icon name={item.icon} />
                 <span>{item.label}</span>
               </Link>
@@ -153,15 +153,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         <div className="sidebar-section-label sidebar-lower-label">Administração</div>
         <nav className="sidebar-nav" aria-label="Administração">
-          {me?.organization && <Link className={`sidebar-link ${pathname.startsWith('/organizacao') ? 'is-active' : ''}`} href="/organizacao">
+          {me?.organization && <Link className={`sidebar-link ${pathname.startsWith('/organizacao') ? 'is-active' : ''}`} href="/organizacao" aria-current={pathname.startsWith('/organizacao') ? 'page' : undefined}>
             <Icon name="briefcase" />
             <span>Organização</span>
           </Link>}
-          {me?.membership?.role === 'admin' && <Link className={`sidebar-link ${pathname.startsWith('/administracao') ? 'is-active' : ''}`} href="/administracao">
+          {me?.membership?.role === 'admin' && <Link className={`sidebar-link ${pathname.startsWith('/administracao') ? 'is-active' : ''}`} href="/administracao" aria-current={pathname.startsWith('/administracao') ? 'page' : undefined}>
             <Icon name="users" />
             <span>Administração</span>
           </Link>}
-          <Link className={`sidebar-link ${pathname.startsWith('/configuracoes') ? 'is-active' : ''}`} href="/configuracoes">
+          <Link className={`sidebar-link ${pathname.startsWith('/configuracoes') ? 'is-active' : ''}`} href="/configuracoes" aria-current={pathname.startsWith('/configuracoes') ? 'page' : undefined}>
             <Icon name="settings" />
             <span>Configurações</span>
           </Link>

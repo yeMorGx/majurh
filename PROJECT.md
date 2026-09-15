@@ -516,6 +516,8 @@ O gerenciamento de pessoas fica separado em `/administracao`. Somente administra
 
 O sistema visual adota o [Material Design 3](https://m3.material.io/) como referência de fundação: papéis semânticos de cor, tokens compartilhados, estados de interação, foco visível e layouts adaptativos. O produto não replica a paleta nem os componentes do Material; os papéis `primary`, `surface`, `on-surface` e `outline` são mapeados para a identidade configurada do tenant, com Majurh como fallback. A sidebar permanece como trilho de navegação e as páginas usam composição de área principal com painel de apoio quando o conteúdo pedir contexto lateral.
 
+Na experiência pós-login, essa decisão também se aplica ao shell inteiro: a sidebar funciona como navigation drawer com indicador ativo e `aria-current`, o header segue a lógica de top app bar, a busca usa uma superfície tonal, cards usam elevação mínima por contorno e tom, e ações/formulários compartilham os estados filled, tonal, outlined, foco, erro, vazio e carregamento. A densidade permanece compacta para o trabalho operacional do RH; o uso de M3 organiza a interação, enquanto a paleta vinho/coral e a trilha de processo mantêm a autoria da Majurh.
+
 ### Critérios de aceite da camada visual
 
 - [ ] A navegação lateral abre `/produtividade` e mantém o estado ativo.

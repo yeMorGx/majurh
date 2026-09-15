@@ -49,6 +49,7 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 - A senha mostra quatro níveis de força, barras semânticas e um anel de oito pontos que acompanha o progresso; o olho alterna `password`/`text` com feedback animado.
 - O submit exibe somente o cachorro da marca durante o carregamento; o estado foi confirmado no DOM como `status` e a tentativa inválida retorna ao formulário com alerta.
 - `prefers-reduced-motion` desativa as rotações e mantém os fallbacks visuais das logos.
+- O shell autenticado recebeu a camada M3: drawer com `aria-current`, top app bar, busca tonal, cards em superfícies semânticas, controles com estados de foco e raios consistentes.
 - `npm run typecheck`: passou.
 - `npm run build`: passou; 14 páginas estáticas geradas e APIs compiladas.
 - Captura visual Chromium: concluída em `1920 × 1080`.

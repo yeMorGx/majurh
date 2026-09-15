@@ -1,6 +1,8 @@
 # Ui — Style Reference
 > clinical blueprint on frosted paper
 
+> **Vigência:** este blueprint representa a referência monocromática inicial. Para o produto atual, o pós-login deve seguir a camada Material Design 3 documentada em `DESIGN Secundario.md`, com a paleta Majurh vinho/coral, navigation drawer, top app bar, superfícies tonais e estados semânticos. A referência abaixo permanece como histórico de decisões de densidade, tipografia e componentes, mas não deve reintroduzir o tema monocromático no app.
+
 **Theme:** light
 
 shadcn/ui is a monochromatic design-system workshop: pure white canvas, soft warm-gray surfaces, and large-radius cards floating on hairline borders. The interface is almost entirely achromatic — black text, white surfaces, gray secondary tones — with a single destructive red reserved for error states and nothing else. Typography leans on Geist's geometric neutrality with tight letter-spacing on display sizes, creating a quiet, code-adjacent feel that reads as developer infrastructure rather than consumer product.
