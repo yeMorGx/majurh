@@ -337,6 +337,11 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .login-reference-mark img { display: block; width: 125px; height: 51px; object-fit: contain; }
 .login-reference-mark.is-custom { width: min(100%, 190px); }
 .login-reference-mark.is-custom img { width: auto; max-width: 190px; height: auto; max-height: 51px; }
+.login-reference-mark .three-logo { position: relative; width: 100%; height: 100%; outline: 0; perspective: 900px; transform-style: preserve-3d; }
+.login-reference-mark .three-logo canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+.login-reference-mark .three-logo-fallback { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; opacity: 1; transition: opacity 180ms ease; }
+.login-reference-mark .three-logo.is-ready .three-logo-fallback { opacity: 0; }
+.login-reference-mark .three-logo:focus-visible { outline: 2px solid var(--vc-green); outline-offset: 5px; border-radius: 10px; }
 .login-reference-wordmark { display: inline-block; color: #4a1119; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(48px, 5.2vw, 76px); font-style: italic; font-weight: 400; letter-spacing: -0.09em; line-height: 0.9; transform: scaleX(0.9) scaleY(1.15); }
 .login-page-reference .eyebrow, .login-page-reference .login-form-wrap > h1 { display: none; }
 .login-page-reference .login-reference-tagline { max-width: 490px; margin: 0 0 44px; color: #6b3438; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(20px, 1.75vw, 25px); font-style: italic; line-height: 1.25; text-align: center; }
@@ -355,11 +360,8 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .login-page-reference .login-reference-submit { width: calc(100% - 32px); min-height: 84px; margin: 28px 16px 0; border-color: #4a1119; border-radius: 14px; background: #4a1119; color: white; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(30px, 2.8vw, 48px); font-style: italic; font-weight: 400; letter-spacing: -0.04em; }
 .login-page-reference .login-reference-submit:hover { border-color: #6b1f2a; background: #6b1f2a; }
 .login-alt-methods { display: grid; grid-template-columns: repeat(4, minmax(0, 78px)); justify-content: space-between; width: 430px; margin: 32px 0 0 16px; }
-.login-alt-method-shell { width: 78px; height: 78px; perspective: 900px; transform-style: preserve-3d; }
-.login-alt-method { width: 100%; height: 100%; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,228,216,0.18); border-radius: 10px; background: linear-gradient(145deg, #5e1824, #351016); color: white; box-shadow: 0 8px 18px rgba(74,17,25,0.12); transition: border-radius 280ms ease, background 280ms ease, box-shadow 280ms ease; }
-.login-alt-method { transform-style: preserve-3d; backface-visibility: hidden; }
+.login-alt-method { width: 78px; height: 78px; display: grid; place-items: center; padding: 0; border: 1px solid rgba(255,228,216,0.18); border-radius: 10px; background: linear-gradient(145deg, #5e1824, #351016); color: white; box-shadow: 0 8px 18px rgba(74,17,25,0.12); }
 .login-alt-method img { display: block; width: 30px; height: 30px; object-fit: contain; }
-.login-alt-method-shell:hover .login-alt-method { border-radius: 24px; background: linear-gradient(145deg, #7b2634, #4a1119); box-shadow: 0 13px 24px rgba(74,17,25,0.22); }
 .login-alt-method:disabled { cursor: not-allowed; opacity: 1; }
 .login-page-reference .login-access-note { display: none; }
 .login-page-reference .setup-callout, .login-page-reference .form-error { margin-bottom: 18px; }
@@ -534,8 +536,7 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .login-field-icon { width: 52px; height: 52px; }
   .login-page-reference .login-reference-submit { width: 100%; margin: 18px 0 0; min-height: 68px; }
   .login-alt-methods { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; width: 100%; margin: 30px auto 0; }
-  .login-alt-method-shell { width: 100%; height: auto; aspect-ratio: 1; }
-  .login-alt-method { width: 100%; height: 100%; }
+  .login-alt-method { width: 100%; height: auto; aspect-ratio: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

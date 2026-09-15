@@ -506,7 +506,7 @@ Majurh é a marca da plataforma e o fallback visual. A organização é o tenant
 
 A tela padrão de `/login` segue o mockup Majurh em composição dividida: formulário claro à esquerda e arte `public/brand/majurh-login-art.png` à direita. A identidade base usa vinho, vermelho queimado, coral, creme e dourado derivados da arte local. A marca utiliza `public/brand/majurh-dog-mark.svg`, o wordmark editável (`Maju RH` no fallback) e quatro métodos visuais com logos locais de Google, Microsoft, Sólides e LinkedIn; os métodos permanecem desativados até os fluxos de autenticação serem implementados. As imagens customizadas do white-label continuam sendo arquivos enviados ao armazenamento privado.
 
-As animações do login usam Framer Motion para a entrada da composição e as microinterações dos métodos, incluindo uma rotação 3D no hover, com fallback sem deslocamento quando `prefers-reduced-motion` está ativo.
+O logo principal do login usa Three.js em um canvas transparente isolado: ao passar o mouse ou focar com teclado, a marca faz uma volta 3D no eixo Y e retorna centralizada. O componente mantém um fallback de imagem local enquanto a textura carrega e respeita `prefers-reduced-motion`.
 
 O gerenciamento de pessoas fica separado em `/administracao`. Somente administradores podem criar ou revogar convites, e os papéis de novos membros começam limitados a `recruiter` ou `viewer`. O envio de e-mail transacional ainda não está conectado: o link é gerado para cópia manual, evitando colocar credenciais de provedor no navegador.
 
