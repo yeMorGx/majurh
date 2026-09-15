@@ -3,11 +3,28 @@
 import { Icon } from '@/components/ui/icon';
 import { authClient } from '@/lib/auth/client';
 import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 
 const defaultLoginLogoPath = '/brand/majurh-dog-mark.svg';
 const defaultLoginWordmark = 'Maju RH';
+const loginMethods = [
+  { name: 'Google', logo: '/brand/auth-google.svg' },
+  { name: 'Microsoft', logo: '/brand/auth-microsoft.svg' },
+  { name: 'Sólides', logo: '/brand/auth-solides.svg' },
+  { name: 'LinkedIn', logo: '/brand/auth-linkedin.svg' },
+] as const;
+
+const loginMethodContainerVariants = {
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { delayChildren: 0.2, staggerChildren: 0.08 } },
+};
+
+const loginMethodVariants = {
+  hidden: { opacity: 0, scale: 0.9, y: 10 },
+  visible: { opacity: 1, scale: 1, y: 0, transition: { duration: 0.42, ease: 'easeOut' as const } },
+};
 
 function isVercelPreviewDeployment() {
   if (typeof window === 'undefined') return false;
@@ -52,6 +69,7 @@ function authErrorMessage(error: unknown) {
 
 export default function LoginPage() {
   const router = useRouter();
+  const shouldReduceMotion = useReducedMotion();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -109,7 +127,12 @@ export default function LoginPage() {
   return (
     <main className="login-page login-page-reference" style={getBrandStyle(organization) as CSSProperties}>
       <section className="login-form-side login-reference-form-side">
-        <div className="login-form-wrap login-reference-form-wrap">
+        <motion.div
+          className="login-form-wrap login-reference-form-wrap"
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: shouldReduceMotion ? 0 : 0.56, ease: 'easeOut' }}
+        >
           <div className="login-reference-brand">
             <div className={`login-reference-mark ${organization?.brand_logo_path ? 'is-custom' : ''}`}>
               <img src={logoPath} alt="" />
@@ -136,16 +159,42 @@ export default function LoginPage() {
             <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="email">E-mail corporativo</label><div className="login-reference-field"><input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu.email@empresa.com" /><span className="login-field-icon" aria-hidden="true"><Icon name="mail" size={19} /></span></div></div>
             <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="password">Senha</label><div className="login-reference-field"><input className="form-input" id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" /><button className="login-field-icon login-field-action" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}><Icon name={showPassword ? 'eye-off' : 'eye'} size={19} /></button></div></div>
             {error && <div className="form-error" role="alert">{error}</div>}
-            <button className="button button-primary login-reference-submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
+            <motion.button
+              className="button button-primary login-reference-submit"
+              disabled={loading}
+              whileHover={shouldReduceMotion ? undefined : { scale: 1.012, y: -2 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.985 }}
+              transition={{ type: 'spring', stiffness: 380, damping: 26 }}
+            >
+              {loading ? 'Entrando…' : 'Entrar'}
+            </motion.button>
           </form>
-          <div className="login-alt-methods" role="group" aria-label="Outras formas de login">
-            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 1, disponível em breve"><span className="visually-hidden">Em breve</span></button>
-            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 2, disponível em breve"><span className="visually-hidden">Em breve</span></button>
-            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 3, disponível em breve"><span className="visually-hidden">Em breve</span></button>
-            <button className="login-alt-method" type="button" disabled title="Disponível em breve" aria-label="Outra forma de login 4, disponível em breve"><span className="visually-hidden">Em breve</span></button>
-          </div>
+          <motion.div
+            className="login-alt-methods"
+            role="group"
+            aria-label="Outras formas de login"
+            variants={loginMethodContainerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {loginMethods.map((method) => (
+              <motion.div
+                className="login-alt-method-shell"
+                key={method.name}
+                variants={loginMethodVariants}
+                whileHover={shouldReduceMotion ? undefined : { y: -5, scale: 1.045, rotateY: 360 }}
+                whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+                transition={{ duration: 0.72, ease: 'easeInOut' }}
+              >
+                <button className="login-alt-method" type="button" disabled title={`${method.name} disponível em breve`} aria-label={`${method.name}, disponível em breve`}>
+                  <img src={method.logo} alt="" />
+                  <span className="visually-hidden">{method.name} — disponível em breve</span>
+                </button>
+              </motion.div>
+            ))}
+          </motion.div>
           <p className="login-access-note">Ainda não tem acesso? Solicite um convite ao administrador da sua organização.</p>
-        </div>
+        </motion.div>
       </section>
       <aside className={`login-side-art login-reference-art-side ${bannerPath ? 'has-custom-banner' : ''}`} style={bannerPath ? loginArtStyle(organization) : undefined} aria-label="Imagem de apresentação da plataforma">
         {!bannerPath && <img className="login-reference-art-image" src="/brand/majurh-login-art.png" alt="" />}

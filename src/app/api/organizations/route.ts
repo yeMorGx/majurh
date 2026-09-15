@@ -33,7 +33,7 @@ export async function PATCH(request: NextRequest) {
 
     const primaryColor = readNullableHex(body.brandPrimaryColor);
     const accentColor = readNullableHex(body.brandAccentColor);
-    if (primaryColor === 'invalid' || accentColor === 'invalid') return errorJson('As cores devem estar no formato hexadecimal, por exemplo #0f4d3a.', 400);
+    if (primaryColor === 'invalid' || accentColor === 'invalid') return errorJson('As cores devem estar no formato hexadecimal, por exemplo #4a1119.', 400);
 
     const loginKicker = readLimitedString(body.brandLoginKicker, 80);
     const loginHeadline = readLimitedString(body.brandLoginHeadline, 140);

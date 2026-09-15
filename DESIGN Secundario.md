@@ -4,7 +4,7 @@
 
 ## 1. Norte visual
 
-O mockup de referência usa uma interface de produtividade clara: uma moldura branca, shell em cinza muito suave, sidebar lateral, header com busca e ações, cards brancos e verde como cor de destaque. O Vieira Couto RH deve preservar essa sensação de ordem e leveza, mas trocar o vocabulário de “projetos e tarefas” pelo de **candidatos, processos e documentos**.
+O mockup de referência usa uma interface de produtividade clara: uma moldura clara, shell em creme muito suave, sidebar lateral, header com busca e ações, cards claros e vinho/coral como cores de destaque. O Majurh deve preservar essa sensação de ordem e leveza, mas trocar o vocabulário de “projetos e tarefas” pelo de **candidatos, processos e documentos**.
 
 ### Conceito
 
@@ -22,17 +22,17 @@ Usar os nomes semânticos abaixo no tema do Tailwind/shadcn. Os hexadecimais sã
 
 | Token | Hex | Uso |
 |---|---:|---|
-| `vc-background` | `#FFFFFF` | Fundo principal de conteúdo e cards |
-| `vc-shell` | `#F4F7F5` | Sidebar, header e áreas de apoio |
-| `vc-surface-subtle` | `#FAFCFB` | Campos, linhas de tabela e regiões suaves |
-| `vc-border` | `#E3EAE6` | Bordas e divisórias |
-| `vc-ink` | `#10231B` | Texto principal, títulos e números |
-| `vc-muted` | `#71817A` | Texto secundário e metadados |
-| `vc-forest` | `#0F4D3A` | Ações fortes, card hero e hover escuro |
-| `vc-green` | `#138A62` | Ação primária, progresso e status positivo |
-| `vc-mint` | `#DDF3E9` | Fundo de sucesso e seleção suave |
-| `vc-warning` | `#B7791F` | Atenção e documentação em análise |
-| `vc-warning-soft` | `#FFF3D6` | Fundo de atenção |
+| `vc-background` | `#FFFAF7` | Fundo principal de conteúdo e cards |
+| `vc-shell` | `#F8EFEB` | Sidebar, header e áreas de apoio |
+| `vc-surface-subtle` | `#FFFDFB` | Campos, linhas de tabela e regiões suaves |
+| `vc-border` | `#EAD9D3` | Bordas e divisórias |
+| `vc-ink` | `#281416` | Texto principal, títulos e números |
+| `vc-muted` | `#806B6D` | Texto secundário e metadados |
+| `vc-forest` | `#4A1119` | Ações fortes, card hero e hover escuro |
+| `vc-green` | `#C4512E` | Ação primária, progresso e status positivo; token legado de nome |
+| `vc-mint` | `#FFE4D8` | Fundo de sucesso e seleção suave |
+| `vc-warning` | `#AF651F` | Atenção e documentação em análise |
+| `vc-warning-soft` | `#FFF0DC` | Fundo de atenção |
 | `vc-danger` | `#C44949` | Reprovação, erro e desistência |
 | `vc-danger-soft` | `#FCE8E8` | Fundo de erro |
 | `vc-info` | `#3B6EA8` | Informações e links auxiliares |
@@ -40,10 +40,10 @@ Usar os nomes semânticos abaixo no tema do Tailwind/shadcn. Os hexadecimais sã
 
 Regras:
 
-- Verde é a cor de ação e avanço, não deve pintar todos os elementos da tela.
-- O vermelho representa uma condição ou risco operacional, nunca uma ação destrutiva sem confirmação.
+- Vinho é a cor de ação forte e o coral é a cor de avanço; nenhum dos dois deve pintar todos os elementos da tela.
+- O vermelho queimado representa a identidade do produto e, quando usado em status, deve vir acompanhado de texto ou ícone.
 - Status não pode depender apenas de cor: combinar texto, forma, ícone e, quando necessário, hachura.
-- Não usar gradientes coloridos como fundo de página. O mockup pode ter verde profundo em um card de destaque, mas o restante deve permanecer silencioso.
+- Não usar gradientes coloridos como fundo de página. A arte do login pode usar o gradiente vinho/coral; o restante deve permanecer silencioso.
 - Não usar preto puro; preferir `vc-ink`.
 
 ## 3. Tipografia
@@ -171,7 +171,7 @@ O label exibido deve ser sempre legível: não usar apenas bolinhas coloridas.
 Composição dividida, porém simples:
 
 - Lado principal branco com logo, título **Entrar no Vieira Couto RH**, campos e CTA.
-- Lado auxiliar em `vc-forest`, com uma ilustração abstrata/geométrica de documentos conectados a uma trilha de processo; sem pessoas genéricas de banco de imagens.
+- Lado auxiliar em `vc-forest`, com a arte local vinho/coral do cachorro; sem pessoas genéricas de banco de imagens.
 - Em mobile, remover o painel auxiliar e manter apenas o formulário.
 
 ### Dashboard
@@ -203,8 +203,8 @@ Copy de exemplo:
 ### Perfil do candidato
 
 - Cabeçalho branco com nome, CPF mascarado, telefone e status atual.
-- Abaixo, tabs com underline verde ou pílula mint; evitar muitos contornos.
-- O componente de maior personalidade é `ProcessTimeline`: etapas passadas em verde escuro, etapa atual em verde, próxima etapa em cinza e pendências com hachura.
+- Abaixo, tabs com underline coral ou pílula peach; evitar muitos contornos.
+- O componente de maior personalidade é `ProcessTimeline`: etapas passadas em vinho escuro, etapa atual em coral, próxima etapa em cinza e pendências com hachura.
 - Documentos devem usar lista compacta com ícone de arquivo, status, data e ação de visualizar.
 
 ### Alerta de CPF repetido
@@ -224,7 +224,7 @@ Modal ou painel lateral com título **Registrar desistência**. A ordem dos camp
 - Lucide como biblioteca única de ícones.
 - Tamanho base 18 px; 16 px em metadados e 20–24 px em ações principais.
 - Não usar emoji na interface final.
-- A ilustração do login deve ser abstrata e específica: folhas/documentos, pequenos marcadores e uma trilha verde; evitar aperto de mãos, pessoas sorrindo ou ícones genéricos de “equipe”.
+- A ilustração do login deve ser abstrata e específica: o cachorro/arte local em vinho, vermelho queimado e laranja; evitar aperto de mãos, pessoas sorrindo ou ícones genéricos de “equipe”.
 - A hachura diagonal deve ter linhas finas em `vc-muted` com baixa opacidade e aparecer apenas em pendências, placeholders ou segmentos incompletos da trilha.
 - Não combinar hachura, gradiente, glow e sombra no mesmo componente.
 
@@ -247,7 +247,7 @@ Mensagens:
 ## 9. Acessibilidade
 
 - Contraste AA para texto e controles; conferir especialmente cinza secundário em fundo branco.
-- Foco visível com outline verde de pelo menos 2 px.
+- Foco visível com outline coral de pelo menos 2 px.
 - Todos os inputs têm label persistente; placeholder não substitui label.
 - Dialogs têm título, descrição, foco inicial e fechamento por Escape.
 - Tabelas têm cabeçalho semântico; badges continuam compreensíveis sem cor.
@@ -263,4 +263,3 @@ Mensagens:
 - Usar `StatusBadge` e `ProcessTimeline` em todas as telas para manter leitura consistente.
 - Não copiar literalmente o dashboard do mockup: preservar o sistema visual, mas priorizar o fluxo candidato → processo → documentos → histórico.
 - Antes de finalizar uma tela, conferir desktop, mobile, teclado, estado vazio e erro.
-

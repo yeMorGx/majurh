@@ -19,8 +19,8 @@ export type OrganizationBrand = {
 };
 
 const defaultColors = {
-  primary: '#0f4d3a',
-  accent: '#138a62',
+  primary: '#4a1119',
+  accent: '#c4512e',
 };
 
 export function getBrandStyle(organization?: OrganizationBrand | null): Record<string, string> {

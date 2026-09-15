@@ -13,14 +13,14 @@
 
 ## Comparação
 
-Na comparação combinada, a divisão do painel (`39,58% / 60,42%`), o recorte da arte, a marca, o tagline, a geometria dos campos, o botão e os quatro controles inferiores mantêm a composição do mockup. A última iteração compacta o formulário para uma leitura mais leve, sem perder a hierarquia: campos de 60 px, círculos de 60 px, botão de 84 px e largura máxima de 475 px. A implementação mantém os campos como inputs reais, acrescenta labels e placeholders orientativos e usa ícones funcionais nos controles circulares; o segundo círculo alterna mostrar/ocultar senha. Os quatro controles inferiores são botões semanticamente desativados, reservados para futuras formas de login.
+Na comparação combinada, a divisão do painel (`39,58% / 60,42%`), o recorte da arte, a marca, o tagline, a geometria dos campos, o botão e os quatro controles inferiores mantêm a composição do mockup. A última iteração compacta o formulário para uma leitura mais leve, sem perder a hierarquia: campos de 60 px, círculos de 60 px, botão de 84 px e largura máxima de 475 px. A implementação mantém os campos como inputs reais, acrescenta labels e placeholders orientativos e usa ícones funcionais nos controles circulares; o segundo círculo alterna mostrar/ocultar senha. Os quatro controles inferiores exibem logos locais de Google, Microsoft, Sólides e LinkedIn, são semanticamente desativados e ficam reservados para futuras formas de login.
 
 ### Superfícies de fidelidade
 
 - Fontes e tipografia: wordmark, tagline e ação usam serif itálica local como fallback estável; a hierarquia e as proporções foram ajustadas ao mockup.
 - Espaçamento e layout: marca inicia no mesmo eixo vertical; campos e botão foram alinhados nos mesmos y-points do source; o painel lateral ocupa o restante da largura.
-- Cores e tokens: fundo claro, contorno escuro e botão preto seguem o source; overrides de organização continuam aplicáveis por tokens.
-- Imagem e assets: dog mark e arte da direita vêm de arquivos; os quatro controles inferiores preservam a forma quadrada do mockup sem transformar futuras integrações em ações falsas.
+- Cores e tokens: a base saiu do verde e passou para vinho, vermelho queimado, coral, creme e dourado; overrides de organização continuam aplicáveis por tokens.
+- Imagem e assets: dog mark, arte da direita e logos dos métodos vêm de arquivos locais; não há URL de imagem editável nem integração falsa.
 - Copy e conteúdo: `Maju RH`, “Seu controle de contratação” e “Entrar” seguem o fallback aprovado; nome e textos do tenant continuam customizáveis.
 
 ## Findings
@@ -33,14 +33,17 @@ Não há findings P0, P1 ou P2 acionáveis após a iteração final. As diferen�
 2. Segunda captura: a estrutura ficou alinhada, mas o wordmark/tagline e o botão tinham escala diferente. Ajuste: proporções tipográficas e deslocamentos verticais foram refinados.
 3. Captura final: os elementos decorativos foram incorporados como asset derivado do mockup e os y-points dos campos, botão e controles inferiores foram nivelados.
 4. Iteração anterior: o wordmark foi corrigido para `Maju RH`, os campos receberam labels/placeholders e os quadrados foram convertidos em botões desativados para futuras formas de login.
-5. Iteração atual: campos, círculos, botão e espaçamentos foram compactados; a largura mobile foi limitada com `calc(100vw - 40px)` para impedir corte horizontal.
-6. Smoke responsivo: abaixo de 860px a arte lateral é removida e o formulário passa a usar toda a largura disponível; não existe mockup mobile separado para uma comparação de fidelidade.
+5. Iteração anterior: campos, círculos, botão e espaçamentos foram compactados; a largura mobile foi limitada com `calc(100vw - 40px)` para impedir corte horizontal.
+6. Iteração atual: a paleta global foi trocada para vinho/coral, os quatro controles inferiores passaram a exibir logos locais e receberam rotação 3D suave no hover via Framer Motion.
+7. Smoke responsivo: abaixo de 860px a arte lateral é removida e o formulário passa a usar toda a largura disponível; não existe mockup mobile separado para uma comparação de fidelidade.
 
 ## Interações e validações
 
 - Rota `/login` respondeu `200` no servidor local de produção.
 - Inputs mantêm `required`, `autoComplete`, labels acessíveis, placeholders orientativos e submit do Neon Auth.
 - O controle de senha alterna entre `password` e `text` no componente.
+- Os quatro métodos adicionais aparecem com logos locais e permanecem desativados até cada provedor ter autenticação implementada.
+- A entrada, o hover 3D e o pressionar dos métodos usam Framer Motion; `prefers-reduced-motion` remove os deslocamentos e a rotação.
 - `npm run typecheck`: passou.
 - `npm run build`: passou; 14 páginas estáticas geradas e APIs compiladas.
 - Captura visual Chromium: concluída em `1920 × 1080`.
