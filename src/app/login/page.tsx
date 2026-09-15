@@ -15,6 +15,38 @@ const loginMethods = [
   { name: 'Sólides', logo: '/brand/auth-solides.svg' },
   { name: 'LinkedIn', logo: '/brand/auth-linkedin.svg' },
 ] as const;
+const commonEmailDomains = ['gmail.com', 'outlook.com', 'hotmail.com', 'yahoo.com.br', 'empresa.com.br'];
+
+type PasswordStrength = {
+  score: number;
+  label: string;
+  tone: 'weak' | 'medium' | 'good' | 'strong';
+  color: string;
+};
+
+function getEmailSuggestions(value: string) {
+  const [localPart, typedDomain = ''] = value.trim().toLowerCase().split('@');
+  if (!localPart || typedDomain.includes('.')) return [];
+
+  return commonEmailDomains
+    .filter((domain) => !typedDomain || domain.startsWith(typedDomain))
+    .slice(0, 3);
+}
+
+function getPasswordStrength(value: string): PasswordStrength {
+  const score = [
+    value.length >= 8,
+    /[A-Z]/.test(value),
+    /\d/.test(value),
+    /[^A-Za-z0-9]/.test(value),
+  ].filter(Boolean).length;
+
+  if (!value) return { score: 0, label: 'Digite sua senha', tone: 'weak', color: '#cdb9b5' };
+  if (score <= 1) return { score, label: 'Senha fraca', tone: 'weak', color: '#c44949' };
+  if (score === 2) return { score, label: 'Em construção', tone: 'medium', color: '#af651f' };
+  if (score === 3) return { score, label: 'Senha boa', tone: 'good', color: '#c4512e' };
+  return { score, label: 'Senha forte', tone: 'strong', color: '#3f825f' };
+}
 
 function isVercelPreviewDeployment() {
   if (typeof window === 'undefined') return false;
@@ -62,6 +94,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [emailFocused, setEmailFocused] = useState(false);
   const [organization, setOrganization] = useState<OrganizationBrand | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -112,6 +145,23 @@ export default function LoginPage() {
   const logoPath = getOrganizationAssetUrl(organization, 'logo') || defaultLoginLogoPath;
   const bannerPath = getOrganizationAssetUrl(organization, 'login-banner');
   const hasCustomArtCopy = Boolean(organization?.brand_login_kicker || organization?.brand_login_headline || organization?.brand_login_description);
+  const emailSuggestions = getEmailSuggestions(email);
+  const emailLooksValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+  const passwordStrength = getPasswordStrength(password);
+
+  if (loading) {
+    return (
+      <main className="login-page login-page-reference login-page-loading">
+        <div className="login-loading-stage" role="status" aria-live="polite">
+          <div className="login-loading-dog">
+            <span className="login-loading-orbit" aria-hidden="true" />
+            <img src={defaultLoginLogoPath} alt="" />
+          </div>
+          <span className="visually-hidden">Entrando no seu espaço de trabalho.</span>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className="login-page login-page-reference" style={getBrandStyle(organization) as CSSProperties}>
@@ -140,8 +190,46 @@ export default function LoginPage() {
             </div>
           )}
           <form className="login-form login-reference-form" onSubmit={handleSubmit}>
-            <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="email">E-mail corporativo</label><div className="login-reference-field"><input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="seu.email@empresa.com" /><span className="login-field-icon" aria-hidden="true"><Icon name="mail" size={19} /></span></div></div>
-            <div className="field login-reference-field-group"><label className="login-field-label" htmlFor="password">Senha</label><div className="login-reference-field"><input className="form-input" id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" /><button className="login-field-icon login-field-action" type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}><Icon name={showPassword ? 'eye-off' : 'eye'} size={19} /></button></div></div>
+            <div className="field login-reference-field-group">
+              <label className="login-field-label" htmlFor="email">E-mail corporativo</label>
+              <div className={`login-reference-field ${emailLooksValid ? 'is-valid' : email ? 'is-filled' : ''}`}>
+                <input className="form-input" id="email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} onFocus={() => setEmailFocused(true)} onBlur={() => window.setTimeout(() => setEmailFocused(false), 120)} placeholder="seu.email@empresa.com" />
+                <span className="login-field-icon login-email-status" aria-hidden="true"><Icon name={emailLooksValid ? 'check' : 'mail'} size={19} /></span>
+              </div>
+              {emailFocused && emailSuggestions.length > 0 && (
+                <div className="login-email-suggestions" role="listbox" aria-label="Sugestões de domínio">
+                  <span className="login-email-suggestions-label">Completar domínio</span>
+                  <div className="login-email-suggestions-list">
+                    {emailSuggestions.map((domain) => (
+                      <button key={domain} type="button" role="option" onMouseDown={(event) => event.preventDefault()} onClick={() => { const localPart = email.trim().split('@')[0]; setEmail(`${localPart}@${domain}`); setEmailFocused(false); }}>
+                        <span>{email.trim().split('@')[0]}@</span>{domain}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {emailLooksValid && <span className="login-field-feedback is-valid"><Icon name="check" size={13} /> Formato reconhecido</span>}
+              <span className="visually-hidden" aria-live="polite">{emailLooksValid ? 'E-mail preenchido com formato válido.' : ''}</span>
+            </div>
+            <div className="field login-reference-field-group">
+              <label className="login-field-label" htmlFor="password">Senha</label>
+              <div className={`login-reference-field ${password ? `password-strength-${passwordStrength.tone}` : ''}`}>
+                <input className="form-input" id="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" />
+                <button className={`login-field-icon login-field-action login-password-action ${password ? 'has-password' : ''} ${showPassword ? 'is-revealed' : ''}`} type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'} style={{ '--strength-color': passwordStrength.color } as CSSProperties}>
+                  <span className="login-password-orbit" aria-hidden="true">
+                    {Array.from({ length: 8 }, (_, index) => <i key={index} className={`login-password-dot ${index < passwordStrength.score * 2 ? 'is-active' : ''}`} style={{ '--dot-index': index } as CSSProperties} />)}
+                  </span>
+                  <span className="login-eye-icon"><Icon name={showPassword ? 'eye-off' : 'eye'} size={19} /></span>
+                </button>
+              </div>
+              {password && (
+                <div className={`login-password-strength is-${passwordStrength.tone}`} aria-live="polite" style={{ '--strength-color': passwordStrength.color } as CSSProperties}>
+                  <span className="login-password-strength-label">Força da senha</span>
+                  <strong>{passwordStrength.label}</strong>
+                  <span className="login-password-strength-bars" aria-hidden="true">{Array.from({ length: 4 }, (_, index) => <i key={index} className={index < passwordStrength.score ? 'is-active' : ''} />)}</span>
+                </div>
+              )}
+            </div>
             {error && <div className="form-error" role="alert">{error}</div>}
             <button className="button button-primary login-reference-submit" disabled={loading}>{loading ? 'Entrando…' : 'Entrar'}</button>
           </form>

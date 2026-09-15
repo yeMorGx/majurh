@@ -15,6 +15,8 @@ A composição padrão da tela usa os assets `public/brand/majurh-dog-mark.svg` 
 
 As logos dos métodos alternativos da tela usam Three.js em canvases transparentes isolados. No hover, cada marca faz uma rotação 3D curta no eixo Y e retorna centralizada; a logo principal permanece como SVG normal e os cards não se movimentam. O componente usa cada SVG local como textura, mantém um fallback enquanto carrega e respeita `prefers-reduced-motion`.
 
+Durante o preenchimento, o e-mail sugere domínios comuns localmente e indica quando o formato está reconhecido. A senha exibe força progressiva com barras e pontos ao redor do controle circular, e o olho alterna entre mostrar e ocultar com microanimação. No submit, o formulário é substituído temporariamente pelo cachorro da marca em estado de carregamento; o cachorro pisca enquanto a autenticação aguarda resposta. Esse feedback não valida se o endereço existe e não envia sugestões para serviços externos.
+
 A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. As migrações `0002` a `0005` já foram aplicadas no banco Neon; configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
 
 ## Variáveis locais

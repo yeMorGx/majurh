@@ -508,6 +508,8 @@ A tela padrão de `/login` segue o mockup Majurh em composição dividida: formu
 
 As logos dos métodos alternativos de login usam Three.js em canvases transparentes isolados: ao passar o mouse, cada marca faz uma volta 3D no eixo Y e retorna centralizada. A logo principal continua como imagem SVG normal. O componente mantém um fallback de imagem local enquanto a textura carrega e respeita `prefers-reduced-motion`.
 
+O formulário também oferece sugestões locais de domínio enquanto o e-mail é digitado, confirma visualmente um formato reconhecido e apresenta a força progressiva da senha com pontos orbitais e barras sem expor o valor. Ao enviar, a tela entra em um loading minimalista que mantém apenas o cachorro da marca com uma animação suave de piscar; o texto de status continua disponível para tecnologias assistivas.
+
 O gerenciamento de pessoas fica separado em `/administracao`. Somente administradores podem criar ou revogar convites, e os papéis de novos membros começam limitados a `recruiter` ou `viewer`. O envio de e-mail transacional ainda não está conectado: o link é gerado para cópia manual, evitando colocar credenciais de provedor no navegador.
 
 ### Referência de design
