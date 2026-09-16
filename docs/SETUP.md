@@ -52,6 +52,8 @@ Os provedores planejados são Catho, Sólides, LinkedIn e Indeed. Catho possui A
 
 Um e-mail só pode pertencer a uma organização. Convites, criação administrativa de usuários, aceite de convite e criação de organização verificam esse vínculo globalmente. O Neon Auth é a fonte de verdade da conta e rejeita uma segunda conta com o mesmo e-mail; o catálogo `legacy_auth_users` também possui unicidade case-insensitive para manter a ponte de dados migrados.
 
+Expulsar uma pessoa remove somente o vínculo dela em `organization_members`. A conta no Neon Auth, o perfil e os dados históricos permanecem preservados; por isso, a operação pode ser revertida com um novo convite, respeitando a regra de um e-mail por organização.
+
 ## Banco Neon
 
 A migração inicial está em `neon/migrations/0001_initial_schema.sql`. Execute o arquivo uma única vez no SQL Editor do Neon ou com uma ferramenta de migração conectada ao `DATABASE_URL`.

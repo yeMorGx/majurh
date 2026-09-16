@@ -82,16 +82,9 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     ` as Array<{ user_id: string }>;
     if (!removed.length) return errorJson('O acesso já não está vinculado a esta organização.', 404);
 
-    // A expulsão do espaço não depende da exclusão da conta no Neon Auth.
-    // Isso também cobre contas migradas cujo user_id não é o ID atual do Auth.
-    let authAccountRemoved = false;
-    try {
-      const result = await auth.admin.removeUser({ userId });
-      authAccountRemoved = !result.error;
-    } catch {
-      // A pessoa já perdeu o acesso à organização; a conta pode ser limpa depois.
-    }
-    return json({ data: { userId, removed: true, authAccountRemoved } });
+    // Expulsar remove somente o vínculo com esta organização. A conta do
+    // Neon Auth, o perfil e todo o histórico operacional permanecem intactos.
+    return json({ data: { userId, removed: true, accountPreserved: true } });
   } catch (error) {
     return databaseErrorResponse(error);
   }

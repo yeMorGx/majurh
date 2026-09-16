@@ -154,7 +154,7 @@ export function AdminConsoleClient() {
 
   async function removeMember() {
     if (!editingMember || editingMember.role === 'admin' && admins <= 1) return;
-    if (!window.confirm(`Remover ${editingMember.full_name} da organização? A conta também será excluída.`)) return;
+    if (!window.confirm(`Expulsar ${editingMember.full_name} da organização? O acesso será removido, mas a conta e os dados históricos serão preservados.`)) return;
     setMemberSaving(true);
     setError('');
     try {

@@ -124,7 +124,7 @@ export function AdminClient() {
   }
 
   async function removeMember(member: Member) {
-    if (!window.confirm(`Expulsar ${member.full_name} da organização?`)) return;
+    if (!window.confirm(`Expulsar ${member.full_name} da organização? O acesso será removido, mas a conta e os dados históricos serão preservados.`)) return;
     setRemovingMember(member.user_id);
     setError('');
     setMessage('');
@@ -133,7 +133,7 @@ export function AdminClient() {
       const payload = await response.json();
       if (!response.ok) { setError(payload.error || 'Não foi possível expulsar esta pessoa.'); return; }
       setMembers((current) => current.filter((item) => item.user_id !== member.user_id));
-      setMessage(`${member.full_name} foi removido da organização.`);
+      setMessage(`${member.full_name} foi removido da organização. A conta e os dados foram preservados.`);
     } catch {
       setError('Não foi possível expulsar esta pessoa. Tente novamente.');
     } finally {
