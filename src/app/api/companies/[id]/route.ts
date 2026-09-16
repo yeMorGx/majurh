@@ -1,7 +1,7 @@
 import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
-import { companySelect } from '@/lib/companies/constants';
+import { companySelect, companySelectBase } from '@/lib/companies/constants';
 import { parseCompanyPayload } from '@/lib/companies/validation';
-import { databaseErrorResponse, errorJson, isRecord, isUuid, json } from '@/lib/api/http';
+import { databaseErrorResponse, errorJson, isRecord, isUndefinedColumnError, isUuid, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -23,10 +23,19 @@ export async function PATCH(request: NextRequest, context: CompanyContext) {
     const entries = Object.entries(parsed.data);
     if (!entries.length) return errorJson('Informe ao menos um campo para atualizar.', 400);
     const assignments = entries.map(([field], index) => `${field} = $${index + 1}`).join(', ');
-    const rows = await db.query(
-      `update public.companies set ${assignments} where organization_id = $${entries.length + 1} and id = $${entries.length + 2} returning ${companySelect}`,
-      [...entries.map(([, value]) => value), organizationId, id],
-    );
+    let rows;
+    try {
+      rows = await db.query(
+        `update public.companies set ${assignments} where organization_id = $${entries.length + 1} and id = $${entries.length + 2} returning ${companySelect}`,
+        [...entries.map(([, value]) => value), organizationId, id],
+      );
+    } catch (error) {
+      if (!isUndefinedColumnError(error)) throw error;
+      rows = await db.query(
+        `update public.companies set ${assignments} where organization_id = $${entries.length + 1} and id = $${entries.length + 2} returning ${companySelectBase}, null::text as logo_path`,
+        [...entries.map(([, value]) => value), organizationId, id],
+      );
+    }
     if (!rows[0]) return errorJson('Empresa não encontrada.', 404);
     return json({ data: rows[0] });
   } catch (error) {

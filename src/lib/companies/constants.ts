@@ -1,4 +1,4 @@
-export const companySelect = [
+const companySelectBase = [
   'id',
   'organization_id',
   'name',
@@ -8,3 +8,6 @@ export const companySelect = [
   'created_at',
   'updated_at',
 ].join(', ');
+
+export const companySelect = companySelectBase + ', logo_path';
+export { companySelectBase };
