@@ -42,7 +42,7 @@ function ResetPasswordForm() {
           <p className="auth-eyebrow">Senha atualizada</p>
           <h1 id="reset-password-title">Acesso recuperado.</h1>
           <p className="auth-copy">Sua nova senha já está ativa. Você pode entrar no console administrativo.</p>
-          <a className="button button-primary auth-submit" href="/login">Ir para o login</a>
+          <a className="button button-primary auth-submit" href="https://majurh-admin.vercel.app/login">Entrar no Majurh Admin</a>
         </> : <>
           <p className="auth-eyebrow">Recuperar acesso</p>
           <h1 id="reset-password-title">Defina uma nova senha.</h1>
