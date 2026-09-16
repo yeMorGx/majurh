@@ -575,6 +575,52 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .login-alt-method { width: 100%; height: auto; aspect-ratio: 1; }
 }
 
+/* Central de notificações: informação operacional com a hierarquia do M3. */
+.notification-center { position: relative; z-index: 40; }
+.notification-center .header-icon-button { display: grid; place-items: center; }
+.notification-center .header-icon-button.has-unread { color: var(--md-sys-color-primary); }
+.notification-badge { position: absolute; top: -4px; right: -4px; min-width: 17px; height: 17px; padding: 0 4px; display: grid; place-items: center; border: 2px solid var(--md-sys-color-surface); border-radius: 999px; background: var(--md-sys-color-secondary); color: white; font-size: 8px; font-weight: 800; line-height: 1; }
+.notification-popover { position: absolute; top: calc(100% + 12px); right: 0; width: min(410px, calc(100vw - 32px)); overflow: hidden; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 22px; background: var(--md-sys-color-surface); box-shadow: 0 18px 48px rgba(35, 15, 19, .16); animation: notification-popover-in 180ms cubic-bezier(.2,.8,.2,1); }
+@keyframes notification-popover-in { from { opacity: 0; transform: translateY(-5px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+.notification-popover > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 20px 20px 14px; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+.notification-popover h2 { margin: 0; font-family: var(--font-display); font-size: 24px; letter-spacing: -.06em; }
+.notification-mark-all { padding: 3px 0; border: 0; background: transparent; color: var(--md-sys-color-primary); font-size: 10px; font-weight: 750; }
+.notification-mark-all:hover { text-decoration: underline; text-underline-offset: 3px; }
+.notification-list { display: grid; max-height: min(430px, calc(100vh - 190px)); overflow-y: auto; }
+.notification-item { position: relative; display: flex; align-items: flex-start; gap: 11px; width: 100%; padding: 14px 20px; border: 0; border-bottom: 1px solid var(--md-sys-color-outline-variant); background: transparent; color: var(--md-sys-color-on-surface); text-align: left; transition: background 150ms ease; }
+.notification-item:hover { background: var(--md-sys-color-surface-container-low); }
+.notification-item.is-read { opacity: .68; }
+.notification-item-icon { display: grid; place-items: center; width: 32px; height: 32px; flex: 0 0 32px; border-radius: 11px; background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-primary); }
+.notification-item-calendar { background: #f5e5d5; color: #88542b; }.notification-item-task { background: #e9e0f0; color: #654d7c; }.notification-item-update { background: #f5dcd5; color: var(--md-sys-color-secondary); }
+.notification-item-copy { display: grid; min-width: 0; gap: 3px; padding-right: 10px; }
+.notification-item-copy strong { font-size: 11px; line-height: 1.35; }
+.notification-item-copy small { color: var(--md-sys-color-on-surface-variant); font-size: 10px; line-height: 1.4; }
+.notification-item-copy em { color: var(--md-sys-color-outline); font-size: 9px; font-style: normal; }
+.notification-unread-mark { position: absolute; top: 20px; right: 16px; width: 6px; height: 6px; border-radius: 50%; background: var(--md-sys-color-secondary); }
+.notification-empty { display: grid; justify-items: center; gap: 6px; padding: 34px 24px; color: var(--md-sys-color-on-surface-variant); text-align: center; }
+.notification-empty svg { color: var(--md-sys-color-primary); }.notification-empty strong { color: var(--md-sys-color-on-surface); font-size: 12px; }.notification-empty p { max-width: 230px; margin: 0; font-size: 10px; line-height: 1.45; }
+.notification-popover > footer { display: flex; justify-content: space-between; gap: 12px; padding: 11px 20px; color: var(--md-sys-color-outline); font-size: 9px; }
+.notification-toast { position: fixed; top: 90px; right: 24px; z-index: 90; display: flex; align-items: flex-start; gap: 11px; width: min(380px, calc(100vw - 32px)); padding: 13px 14px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 16px 4px 16px 16px; background: var(--md-sys-color-surface); box-shadow: 0 16px 42px rgba(35,15,19,.17); animation: notification-toast-in 360ms cubic-bezier(.2,.8,.2,1); }
+@keyframes notification-toast-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: translateX(0); } }
+.notification-toast-icon { display: grid; place-items: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: 11px; background: var(--md-sys-color-primary); color: white; }
+.notification-toast-main { display: grid; flex: 1; min-width: 0; gap: 3px; padding: 0; border: 0; background: transparent; color: var(--md-sys-color-on-surface); text-align: left; }
+.notification-toast-main small { color: var(--md-sys-color-secondary); font-size: 9px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }.notification-toast-main strong { overflow: hidden; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }.notification-toast-main span { overflow: hidden; color: var(--md-sys-color-on-surface-variant); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.notification-toast-close { display: grid; place-items: center; width: 26px; height: 26px; border: 0; border-radius: 8px; background: transparent; color: var(--md-sys-color-outline); }.notification-toast-close:hover { background: var(--md-sys-color-surface-container); color: var(--md-sys-color-on-surface); }
+.changelog-backdrop { position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(35,15,19,.42); backdrop-filter: blur(5px); }
+.changelog-dialog { width: min(600px, 100%); overflow: hidden; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 24px; background: var(--md-sys-color-surface); box-shadow: 0 24px 70px rgba(35,15,19,.2); animation: notification-popover-in 220ms cubic-bezier(.2,.8,.2,1); }
+.changelog-dialog > header { display: grid; grid-template-columns: auto minmax(0,1fr) auto; align-items: start; gap: 12px; padding: 24px; border-bottom: 1px solid var(--md-sys-color-outline-variant); }.changelog-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); }.changelog-dialog h2 { margin: 2px 0 6px; font-family: var(--font-display); font-size: 25px; line-height: 1.05; letter-spacing: -.055em; }.changelog-dialog header p:last-child { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 11px; line-height: 1.45; }
+.changelog-body { padding: 20px 24px 10px; }.changelog-body > p { margin: 0 0 12px; color: var(--md-sys-color-on-surface-variant); font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }.changelog-body ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }.changelog-body li { display: flex; align-items: flex-start; gap: 9px; font-size: 12px; line-height: 1.45; }.changelog-body li svg { flex: 0 0 auto; margin-top: 1px; color: var(--md-sys-color-secondary); }.changelog-dialog > footer { display: flex; justify-content: flex-end; padding: 14px 24px 20px; }
+
+@media (max-width: 620px) {
+  .notification-popover { position: fixed; top: 68px; right: 12px; width: calc(100vw - 24px); }
+  .notification-toast { top: 76px; right: 12px; width: calc(100vw - 24px); }
+  .changelog-backdrop { align-items: end; padding: 8px; }.changelog-dialog { border-radius: 24px 24px 0 0; }.changelog-dialog > header { padding: 20px 18px; }.changelog-body { padding: 18px 18px 8px; }.changelog-dialog > footer { padding: 12px 18px 18px; }.changelog-dialog > footer .button { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .notification-popover, .notification-toast, .changelog-dialog { animation: none; }.notification-item { transition: none; }
+}
+
 /* Console administrativo isolado — usado em /admin e no subdomínio admin. */
 .admin-console-page { min-height: 100vh; padding: 28px 28px 22px; background: radial-gradient(circle at 82% 0%, rgba(196,81,46,0.08), transparent 32%), var(--md-sys-color-surface-container-low); color: var(--md-sys-color-on-surface); }
 .admin-console-shell { width: min(1180px, 100%); margin: 0 auto; }

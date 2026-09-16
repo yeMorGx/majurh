@@ -11,6 +11,7 @@ import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type Organizatio
 import { PresenceHeartbeat } from '@/components/presence/presence-heartbeat';
 import { TimeTrackerProvider } from '@/components/productivity/time-tracker-provider';
 import { AnimatedGearIcon } from '@/components/ui/animated-gear';
+import { NotificationCenter } from '@/components/notifications/notification-center';
 
 type Profile = {
   id: string;
@@ -250,10 +251,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <kbd>⌘ K</kbd>
           </form>
           <div className="header-actions">
-            <button className="icon-button header-icon-button" aria-label="Notificações">
-              <Icon name="bell" />
-              <span className="notification-dot" />
-            </button>
+            <NotificationCenter organizationId={me?.organization?.id} />
           </div>
         </header>
         <main className="app-main">
