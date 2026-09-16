@@ -12,6 +12,8 @@ export type IconName =
   | 'chevron-down'
   | 'chevron-right'
   | 'clock'
+  | 'command'
+  | 'edit'
   | 'file-check'
   | 'file-text'
   | 'git-branch'
@@ -74,6 +76,8 @@ export function Icon({ name, size = 18, strokeWidth = 1.8, className }: IconProp
     'chevron-down': <><path d="m6 9 6 6 6-6" /></>,
     'chevron-right': <><path d="m9 18 6-6-6-6" /></>,
     clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+    command: <path d="M18 3a3 3 0 1 0 0 6h-3v6h3a3 3 0 1 0 0-6h-6V6a3 3 0 1 0-6 0 3 3 0 0 0 3 3h3v6H6a3 3 0 1 0 0 6 3 3 0 0 0 3-3v-3h6v3a3 3 0 1 0 3-3 3 3 0 0 0-3-3h-3V9h3a3 3 0 0 0 3-3 3 3 0 0 0-3-3Z" />,
+    edit: <><path d="m4 16-.7 4.7L8 20l11.2-11.2a2.8 2.8 0 0 0-4-4L4 16Z" /><path d="m13.8 6.2 4 4" /></>,
     'file-check': <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="m8 15 2 2 4-4" /></>,
     'file-text': <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h5" /></>,
     'git-branch': <><circle cx="6" cy="6" r="3" /><circle cx="18" cy="18" r="3" /><path d="M6 9v1a8 8 0 0 0 8 8h1" /><circle cx="18" cy="6" r="3" /><path d="M18 9v3" /></>,
