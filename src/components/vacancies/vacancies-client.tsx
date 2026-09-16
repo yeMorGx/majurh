@@ -10,6 +10,8 @@ type Vacancy = {
   department: string | null;
   unit: string | null;
   quantity: number;
+  assigned_count: number;
+  available_count: number;
   company_id: string | null;
   is_active: boolean;
   created_at: string;
@@ -205,7 +207,9 @@ export function VacanciesClient() {
     }
   }
 
-  const openPositions = vacancies.filter((vacancy) => vacancy.is_active).reduce((sum, vacancy) => sum + vacancy.quantity, 0);
+  const totalPositions = vacancies.filter((vacancy) => vacancy.is_active).reduce((sum, vacancy) => sum + vacancy.quantity, 0);
+  const assignedPositions = vacancies.filter((vacancy) => vacancy.is_active).reduce((sum, vacancy) => sum + vacancy.assigned_count, 0);
+  const openPositions = vacancies.filter((vacancy) => vacancy.is_active).reduce((sum, vacancy) => sum + vacancy.available_count, 0);
   const companyNames = new Map(companies.map((company) => [company.id, company.name]));
 
   return (
@@ -216,7 +220,7 @@ export function VacanciesClient() {
           <h1>Vagas</h1>
           <p>Defina o volume de contratação e a empresa responsável por cada oportunidade.</p>
         </div>
-        <div className="heading-stat"><strong>{openPositions}</strong><span>posições abertas</span></div>
+        <div className="heading-stat"><strong>{openPositions}</strong><span>posições disponíveis</span><small>{assignedPositions} designadas de {totalPositions}</small></div>
       </div>
 
       {error && <div className="form-error" role="alert">{error}</div>}
@@ -240,13 +244,13 @@ export function VacanciesClient() {
 
       <section className="panel vacancy-list-panel">
         <div className="panel-header">
-          <div><h2>Vagas cadastradas</h2><p>{vacancies.length} {vacancies.length === 1 ? 'vaga' : 'vagas'} · {openPositions} posições ativas</p></div>
+          <div><h2>Vagas cadastradas</h2><p>{vacancies.length} {vacancies.length === 1 ? 'vaga' : 'vagas'} · {openPositions} posições disponíveis</p></div>
           <Icon name="list-checks" />
         </div>
         {loading ? <div className="loading-state">Carregando vagas</div> : vacancies.length === 0 ? <div className="empty-state"><strong>Nenhuma vaga cadastrada</strong><p>Crie a primeira oportunidade para iniciar os processos.</p></div> : <div className="vacancy-list">{vacancies.map((vacancy) => <div className="vacancy-row vacancy-row-rich" key={vacancy.id}>
           <span className="vacancy-icon"><Icon name="briefcase" size={17} /></span>
           <span className="vacancy-copy"><strong>{vacancy.title}</strong><span>{companyNames.get(vacancy.company_id ?? '') || 'Empresa não definida'}{[vacancy.department, vacancy.unit].filter(Boolean).map((value) => ` · ${value}`).join('')}</span></span>
-          <span className="vacancy-quantity"><strong>{vacancy.quantity}</strong><span>{vacancy.quantity === 1 ? 'posição' : 'posições'}</span></span>
+          <span className={`vacancy-capacity ${vacancy.available_count === 0 ? 'is-full' : ''}`}><strong>{vacancy.available_count}</strong><span>disponíveis de {vacancy.quantity}</span><small>{vacancy.assigned_count} {vacancy.assigned_count === 1 ? 'designado' : 'designados'}</small></span>
           <span className={`vacancy-state ${vacancy.is_active ? 'is-active' : 'is-inactive'}`}>{vacancy.is_active ? 'Ativa' : 'Inativa'}</span>
           <span className="vacancy-row-actions">
             <button className="button button-secondary vacancy-edit" onClick={() => openEditDrawer(vacancy)}><Icon name="edit" size={15} />Editar</button>

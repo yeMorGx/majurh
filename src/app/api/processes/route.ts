@@ -51,6 +51,24 @@ export async function POST(request: NextRequest) {
     if (withdrawalError) return errorJson(withdrawalError, 400);
     const id = crypto.randomUUID();
     const value = parsed.data;
+
+    if (value.vacancy_id && !['rejected', 'withdrawn', 'talent_pool'].includes(value.status ?? 'new')) {
+      const capacityRows = await db`
+        select v.quantity,
+          count(distinct rp.candidate_id) filter (where rp.status not in ('rejected'::public.process_status, 'withdrawn'::public.process_status, 'talent_pool'::public.process_status))::int as assigned_count,
+          coalesce(bool_or(rp.candidate_id = ${value.candidate_id} and rp.status not in ('rejected'::public.process_status, 'withdrawn'::public.process_status, 'talent_pool'::public.process_status)), false) as candidate_already_assigned
+        from public.vacancies v
+        left join public.recruitment_processes rp
+          on rp.organization_id = v.organization_id and rp.vacancy_id = v.id
+        where v.organization_id = ${body.organizationId}::uuid and v.id = ${value.vacancy_id}::uuid
+        group by v.quantity
+      ` as Array<{ quantity: number; assigned_count: number; candidate_already_assigned: boolean }>;
+      const capacity = capacityRows[0];
+      if (capacity && !capacity.candidate_already_assigned && capacity.assigned_count >= capacity.quantity) {
+        return errorJson('Esta vaga já atingiu a quantidade de posições disponíveis.', 409);
+      }
+    }
+
     const result = await db.transaction((tx) => [
       tx`
         insert into public.recruitment_processes (
@@ -70,7 +88,7 @@ export async function POST(request: NextRequest) {
     ]);
     return json({ data: result[0][0] }, 201);
   } catch (error) {
-    return databaseErrorResponse(error, { foreignKeyMessage: 'Candidato, vaga ou responsável não encontrado.', constraintMessage: 'Um processo withdrawn precisa de um motivo de desistência.' });
+    return databaseErrorResponse(error, { foreignKeyMessage: 'Candidato, vaga ou responsável não encontrado.', constraintMessage: 'Esta vaga já atingiu a quantidade de posições disponíveis ou o processo withdrawn não possui motivo.' });
   }
 }
 

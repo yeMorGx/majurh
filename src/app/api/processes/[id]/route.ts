@@ -23,13 +23,30 @@ export async function PATCH(request: NextRequest, context: ProcessRouteContext) 
     if (!parsed.ok) return json({ error: 'Dados do processo inválidos.', fields: parsed.errors }, 400);
     const entries = Object.entries(parsed.data);
     if (!entries.length) return errorJson('Informe ao menos um campo para atualizar.', 400);
-    const currentRows = await db.query('select status, withdrawal_reason_code from public.recruitment_processes where organization_id = $1 and id = $2', [organizationId, id]) as Array<{ status: ProcessStatus; withdrawal_reason_code: WithdrawalReasonCode | null }>;
+    const currentRows = await db.query('select status, withdrawal_reason_code, candidate_id, vacancy_id from public.recruitment_processes where organization_id = $1 and id = $2', [organizationId, id]) as Array<{ status: ProcessStatus; withdrawal_reason_code: WithdrawalReasonCode | null; candidate_id: string; vacancy_id: string | null }>;
     const current = currentRows[0];
     if (!current) return errorJson('Processo seletivo não encontrado.', 404);
     const nextStatus = parsed.data.status ?? current.status;
     const nextReason = Object.prototype.hasOwnProperty.call(parsed.data, 'withdrawal_reason_code') ? parsed.data.withdrawal_reason_code : current.withdrawal_reason_code;
     const withdrawalError = validateWithdrawalState(nextStatus, nextReason);
     if (withdrawalError) return errorJson(withdrawalError, 400);
+    const nextVacancyId = Object.prototype.hasOwnProperty.call(parsed.data, 'vacancy_id') ? parsed.data.vacancy_id : current.vacancy_id;
+    if (nextVacancyId && !['rejected', 'withdrawn', 'talent_pool'].includes(nextStatus)) {
+      const capacityRows = await db`
+        select v.quantity,
+          count(distinct rp.candidate_id) filter (where rp.status not in ('rejected'::public.process_status, 'withdrawn'::public.process_status, 'talent_pool'::public.process_status))::int as assigned_count,
+          coalesce(bool_or(rp.candidate_id = ${current.candidate_id} and rp.status not in ('rejected'::public.process_status, 'withdrawn'::public.process_status, 'talent_pool'::public.process_status)), false) as candidate_already_assigned
+        from public.vacancies v
+        left join public.recruitment_processes rp
+          on rp.organization_id = v.organization_id and rp.vacancy_id = v.id and rp.id <> ${id}::uuid
+        where v.organization_id = ${organizationId}::uuid and v.id = ${nextVacancyId}::uuid
+        group by v.quantity
+      ` as Array<{ quantity: number; assigned_count: number; candidate_already_assigned: boolean }>;
+      const capacity = capacityRows[0];
+      if (capacity && !capacity.candidate_already_assigned && capacity.assigned_count >= capacity.quantity) {
+        return errorJson('Esta vaga já atingiu a quantidade de posições disponíveis.', 409);
+      }
+    }
     const assignments = entries.map(([field], index) => `${field} = $${index + 1}`).join(', ');
     const values = [...entries.map(([, value]) => value), organizationId, id];
     const updateQuery = `update public.recruitment_processes set ${assignments} where organization_id = $${entries.length + 1} and id = $${entries.length + 2} returning ${processSelect}`;
@@ -58,7 +75,7 @@ async function withProcessContext(request: NextRequest, context: ProcessRouteCon
     if (!role || levels[role] < levels[requiredRole]) return errorJson('Você não tem permissão para esta operação.', 403);
     return handler({ db, organizationId, id, userId });
   } catch (error) {
-    return databaseErrorResponse(error, { notFoundMessage: 'Processo seletivo não encontrado.' });
+    return databaseErrorResponse(error, { notFoundMessage: 'Processo seletivo não encontrado.', constraintMessage: 'Esta vaga já atingiu a quantidade de posições disponíveis ou o processo withdrawn não possui motivo.' });
   }
 }
 

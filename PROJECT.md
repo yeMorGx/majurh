@@ -320,7 +320,9 @@ O token bruto só aparece uma vez para o administrador copiar o link. A aceitaç
 
 #### `vacancies`
 
-`id`, `organization_id`, `title`, `department`, `unit`, `is_active`, `created_at`, `updated_at`.
+`id`, `organization_id`, `title`, `department`, `unit`, `quantity`, `company_id`, `is_active`, `created_at`, `updated_at`.
+
+O saldo da vaga é calculado em tempo real: `assigned_count` conta candidatos distintos em processos ativos da vaga, e `available_count = max(quantity - assigned_count, 0)`. Processos `rejected`, `withdrawn` e `talent_pool` não ocupam posição. A criação ou movimentação de processos respeita o limite, e a quantidade da vaga não pode ser reduzida abaixo do total já designado.
 
 #### `candidates`
 
