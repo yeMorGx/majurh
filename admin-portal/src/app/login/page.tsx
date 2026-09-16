@@ -17,6 +17,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [resetSent, setResetSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -32,6 +33,29 @@ export default function AdminLoginPage() {
       window.location.assign('/');
     } catch (loginError) {
       setError(authErrorMessage(loginError));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function requestReset() {
+    setError('');
+    setResetSent(false);
+    if (!email.trim()) {
+      setError('Informe seu e-mail para receber o link de redefinição.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/request-password-reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim(), redirectTo: 'https://majurh.vercel.app/reset-password' }),
+      });
+      if (!response.ok) throw new Error('reset');
+      setResetSent(true);
+    } catch {
+      setError('Não foi possível solicitar a redefinição agora. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -53,9 +77,11 @@ export default function AdminLoginPage() {
           <label htmlFor="password">Senha</label>
           <input id="password" name="password" type="password" autoComplete="current-password" placeholder="Sua senha" required value={password} onChange={(event) => setPassword(event.target.value)} />
           {error && <p className="admin-form-error" role="alert">{error}</p>}
+          {resetSent && <p className="admin-form-success" role="status">Se o e-mail estiver cadastrado, o link de redefinição foi enviado.</p>}
           <button className="admin-primary-button" type="submit" disabled={loading}>
             {loading ? 'Verificando acesso...' : 'Entrar no console'}
           </button>
+          <button className="admin-text-button admin-reset-button" type="button" onClick={() => void requestReset()} disabled={loading}>Esqueci minha senha</button>
         </form>
         <p className="admin-login-footnote">O cadastro público está desativado. Novos acessos são criados por um administrador.</p>
       </section>

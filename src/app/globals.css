@@ -1692,6 +1692,20 @@ kbd { border-color: var(--md-sys-color-outline); border-radius: var(--md-sys-sha
 .app-frame .admin-policy-panel .panel-header > svg { color: var(--md-sys-color-on-primary); }
 .app-frame .admin-policy-panel .policy-list { color: color-mix(in srgb, var(--md-sys-color-on-primary) 84%, transparent); }
 
+.auth-reset-page { min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--vc-background); }
+.auth-card { width: min(100%, 430px); border: 1px solid var(--vc-border); border-radius: 24px; background: var(--vc-surface-subtle); padding: 32px; box-shadow: var(--shadow-card); }
+.auth-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 56px; color: var(--vc-forest); }
+.auth-brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 11px; background: var(--vc-forest); color: white; font-family: var(--font-display); font-size: 12px; font-weight: 800; }
+.auth-eyebrow { margin: 0 0 8px; color: var(--vc-green); font-size: 12px; font-weight: 700; }
+.auth-card h1 { margin: 0; color: var(--vc-ink); font-family: var(--font-display); font-size: 34px; letter-spacing: -.06em; line-height: 1.05; }
+.auth-copy { margin: 10px 0 28px; color: var(--vc-muted); }
+.auth-form { display: grid; gap: 9px; }
+.auth-form label { color: var(--vc-ink); font-size: 12px; font-weight: 700; }
+.auth-form input { width: 100%; min-height: 46px; border: 1px solid var(--vc-border); border-radius: 12px; background: var(--vc-surface); color: var(--vc-ink); padding: 0 13px; outline: 0; }
+.auth-form input:focus { border-color: var(--vc-green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--vc-green) 16%, transparent); }
+.auth-submit { width: 100%; margin-top: 12px; }
+.auth-form-error { margin: 4px 0 0; border-radius: 10px; background: var(--vc-danger-soft); color: var(--vc-danger); padding: 10px 12px; font-size: 12px; }
+
 /* Ornamento fica reservado para a identidade da marca; cartões de trabalho
    não ganham anéis decorativos que competem com a informação. */
 .admin-console-hero::before, .admin-console-orbit, .productivity-hero::after, .focus-card::after, .task-side-panel::after, .tracker-card::before, .company-intro-panel::after, .organization-hero-card::before, .organization-hero-card::after, .organization-hero-orbit, .organization-preview-art::before, .organization-preview-art::after { display: none; }
