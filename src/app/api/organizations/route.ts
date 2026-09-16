@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 
 import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
+import { findMembershipByEmail } from '@/lib/api/member-email';
 import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
 import { normalizeHex } from '@/lib/branding';
 import { NextRequest } from 'next/server';
@@ -37,13 +38,28 @@ export async function POST(request: NextRequest) {
       order by om.created_at asc
       limit 1
     ` as Array<{ id: string; name: string; slug: string; role: 'admin' | 'recruiter' | 'viewer' }>;
-    if (memberships[0]) {
+    const membershipByEmail = email ? await findMembershipByEmail(db, email) : null;
+    const existingMembership = memberships[0]
+      ? memberships[0]
+      : membershipByEmail
+        ? {
+            id: membershipByEmail.organization_id,
+            name: membershipByEmail.organization_name,
+            slug: '',
+            role: membershipByEmail.role,
+          }
+        : null;
+    if (existingMembership) {
       return json({
         error: 'Este usuário já está associado a uma organização.',
         code: 'ORGANIZATION_EXISTS',
         data: {
-          organization: memberships[0],
-          membership: { role: memberships[0].role },
+          organization: {
+            id: existingMembership.id,
+            name: existingMembership.name,
+            slug: existingMembership.slug,
+          },
+          membership: { role: existingMembership.role },
         },
       }, 409);
     }

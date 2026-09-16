@@ -21,7 +21,7 @@ As logos dos métodos alternativos da tela usam Three.js em canvases transparent
 
 Durante o preenchimento, o e-mail sugere domínios comuns localmente e indica quando o formato está reconhecido. A senha exibe força progressiva com barras e pontos ao redor do controle circular, e o olho alterna entre mostrar e ocultar com microanimação. No submit, o formulário é substituído temporariamente pelo cachorro da marca em estado de carregamento; o cachorro pisca enquanto a autenticação aguarda resposta. Esse feedback não valida se o endereço existe e não envia sugestões para serviços externos.
 
-A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. As migrações `0002` a `0005` já foram aplicadas no banco Neon; configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
+A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. A migração `neon/migrations/0007_unique_member_email.sql` normaliza e-mails, e a `neon/migrations/0008_strict_member_email_guard.sql` bloqueia novos vínculos duplicados com lock transacional. O índice único definitivo em `organization_members.email` será criado depois da limpeza do vínculo histórico duplicado já identificado. As migrações `0002` a `0008` já foram aplicadas no banco Neon; configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
 
 A migração `neon/migrations/0006_companies_vacancies_identity.sql` cria o cadastro de empresas contratantes, adiciona quantidade e empresa às vagas e inclui a escolha RG/CIN na ficha do candidato. Execute-a no branch principal antes de usar `/empresas`, `/vagas` ou o escaneamento de documentos.
 
@@ -47,6 +47,8 @@ O `NEON_AUTH_COOKIE_SECRET` deve ter pelo menos 32 caracteres e ser o mesmo em c
 A base de integrações fica na migração `neon/migrations/0005_integrations_foundation.sql`. Ela cria um registro por provedor e organização, guarda somente credenciais criptografadas e nunca devolve segredos pela API. A aplicação usa `INTEGRATIONS_ENCRYPTION_KEY` para a criptografia; gere uma chave aleatória de 32 bytes em base64url e configure a mesma variável nos ambientes da Vercel.
 
 Os provedores planejados são Catho, Sólides, LinkedIn e Indeed. Catho possui API de vagas para empresas; a Sólides fornece uma API REST autenticada por token de integração; LinkedIn Talent Solutions e Indeed exigem aprovação/parceria para os fluxos de ATS, publicação e candidaturas. Não usar scraping ou login automatizado nessas plataformas.
+
+Um e-mail só pode pertencer a uma organização. Convites, criação administrativa de usuários, aceite de convite e criação de organização verificam esse vínculo globalmente. O Neon Auth é a fonte de verdade da conta e rejeita uma segunda conta com o mesmo e-mail; o catálogo `legacy_auth_users` também possui unicidade case-insensitive para manter a ponte de dados migrados.
 
 ## Banco Neon
 
@@ -94,7 +96,7 @@ Em **Auth → Configuration → Domains** do branch principal, mantenha `https:/
 
 ## Blob privado
 
-Documentos sensíveis usam Blob privado da Vercel. A aplicação grava apenas o pathname no Postgres e entrega o arquivo por `/api/documents/[id]/file`, validando a sessão e o vínculo organizacional em cada requisição.
+Documentos sensíveis usam Blob privado da Vercel. A aplicação aceita PDF, JPG e PNG de até 6 MB, grava apenas o pathname no Postgres e entrega o arquivo por `/api/documents/[id]/file`, validando a sessão e o vínculo organizacional em cada requisição.
 
 ## Executar a aplicação
 

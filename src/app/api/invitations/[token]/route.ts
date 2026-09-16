@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 
 import { getAuthenticatedClient } from '@/lib/api/auth';
 import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
+import { findMembershipsByEmail } from '@/lib/api/member-email';
 import { getDatabase } from '@/lib/neon/db';
 
 export const dynamic = 'force-dynamic';
@@ -69,6 +70,16 @@ export async function POST(
     if (!userId || !email) return errorJson('Entre ou crie sua conta pelo convite antes de continuar.', 401);
     if (email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
       return errorJson('Este convite foi enviado para outro e-mail.', 403);
+    }
+
+    const existingMembership = (await findMembershipsByEmail(db, email)).find(
+      (membership) => membership.organization_id !== invite.organization_id,
+    );
+    if (existingMembership) {
+      return json({
+        error: `Este e-mail já está vinculado à organização "${existingMembership.organization_name}". Uma pessoa só pode pertencer a uma organização.`,
+        code: 'EMAIL_ALREADY_IN_ORGANIZATION',
+      }, 409);
     }
 
     // O vínculo deve usar o ID atual do Neon Auth. O ID legado fica apenas

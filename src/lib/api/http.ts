@@ -38,6 +38,12 @@ export function databaseErrorResponse(
   const code = getErrorCode(error);
 
   if (code === '23505') {
+    if (getErrorMessage(error)?.includes('Este e-mail já está vinculado a uma organização')) {
+      return errorJson(
+        'Este e-mail já está vinculado a uma organização. Uma pessoa só pode pertencer a uma organização.',
+        409,
+      );
+    }
     return errorJson(
       options.duplicateMessage ??
         'Já existe um candidato com este CPF nesta organização.',
@@ -87,6 +93,11 @@ function getErrorCode(error: unknown) {
   }
 
   return typeof error.code === 'string' ? error.code : undefined;
+}
+
+function getErrorMessage(error: unknown) {
+  if (!isRecord(error)) return undefined;
+  return typeof error.message === 'string' ? error.message : undefined;
 }
 
 function isConfigurationError(error: unknown) {

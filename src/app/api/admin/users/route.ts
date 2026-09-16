@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth/server';
 import { getAdminContext } from '@/lib/api/admin-context';
+import { findMembershipsByEmail } from '@/lib/api/member-email';
 import { databaseErrorResponse, errorJson, isRecord, json } from '@/lib/api/http';
 import { NextRequest } from 'next/server';
 
@@ -60,15 +61,19 @@ export async function POST(request: NextRequest) {
     const context = await getAdminContext();
     if ('response' in context) return context.response;
 
-    const existingMember = await context.db`
-      select 1
-      from public.organization_members om
-      left join public.legacy_auth_users lau on lau.id = om.user_id
-      where om.organization_id = ${context.organizationId}::uuid
-        and lower(coalesce(om.email, lau.email)) = ${email}
-      limit 1
-    `;
-    if (existingMember.length) return errorJson('Este e-mail já faz parte da organização.', 409);
+    const existingMembers = await findMembershipsByEmail(context.db, email);
+    const existingOtherOrganization = existingMembers.find(
+      (member) => member.organization_id !== context.organizationId,
+    );
+    if (existingOtherOrganization) {
+      return json({
+        error: `Este e-mail já está vinculado à organização "${existingOtherOrganization.organization_name}". Uma pessoa só pode pertencer a uma organização.`,
+        code: 'EMAIL_ALREADY_IN_ORGANIZATION',
+      }, 409);
+    }
+    if (existingMembers.some((member) => member.organization_id === context.organizationId)) {
+      return errorJson('Este e-mail já faz parte da organização.', 409);
+    }
 
     const created = await auth.admin.createUser({
       email,
