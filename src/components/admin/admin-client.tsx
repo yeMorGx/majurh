@@ -40,6 +40,7 @@ export function AdminClient() {
   const [message, setMessage] = useState('');
   const [createdInvite, setCreatedInvite] = useState<{ email: string; url: string } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [removingMember, setRemovingMember] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -122,6 +123,24 @@ export function AdminClient() {
     setCopied(true);
   }
 
+  async function removeMember(member: Member) {
+    if (!window.confirm(`Expulsar ${member.full_name} da organização?`)) return;
+    setRemovingMember(member.user_id);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(member.user_id)}`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) { setError(payload.error || 'Não foi possível expulsar esta pessoa.'); return; }
+      setMembers((current) => current.filter((item) => item.user_id !== member.user_id));
+      setMessage(`${member.full_name} foi removido da organização.`);
+    } catch {
+      setError('Não foi possível expulsar esta pessoa. Tente novamente.');
+    } finally {
+      setRemovingMember('');
+    }
+  }
+
   if (loading) return <div className="loading-state">Carregando administração</div>;
   if (error && !data?.organization) return <div className="form-error" role="alert">{error}</div>;
   if (data?.membership?.role !== 'admin') {
@@ -160,7 +179,7 @@ export function AdminClient() {
 
       <section className="panel admin-members-panel">
         <div className="panel-header"><div><h2>Pessoas na organização</h2><p>{members.length} {members.length === 1 ? 'pessoa com acesso' : 'pessoas com acesso'} ao espaço.</p></div><Icon name="users" /></div>
-        {members.length === 0 ? <div className="empty-state"><strong>Nenhuma pessoa cadastrada</strong><p>Crie o primeiro convite para começar a equipe.</p></div> : <div className="member-list">{members.map((member) => <div className="member-row" key={member.user_id}><div className="avatar avatar-small">{initials(member.full_name)}</div><div className="member-copy"><strong>{member.full_name}</strong><span>{member.email || 'E-mail não disponível'}</span></div><span className={`role-pill role-${member.role}`}>{roleLabel(member.role)}</span></div>)}</div>}
+        {members.length === 0 ? <div className="empty-state"><strong>Nenhuma pessoa cadastrada</strong><p>Crie o primeiro convite para começar a equipe.</p></div> : <div className="member-list">{members.map((member) => <div className="member-row" key={member.user_id}><div className="avatar avatar-small">{initials(member.full_name)}</div><div className="member-copy"><strong>{member.full_name}</strong><span>{member.email || 'E-mail não disponível'}</span></div><span className={`role-pill role-${member.role}`}>{roleLabel(member.role)}</span><button type="button" className="button button-ghost member-remove-button" onClick={() => removeMember(member)} disabled={removingMember === member.user_id}>{removingMember === member.user_id ? 'Removendo…' : 'Expulsar'}</button></div>)}</div>}
       </section>
 
       <section className="panel admin-members-panel">

@@ -1586,6 +1586,8 @@ kbd { border-color: var(--md-sys-color-outline); border-radius: var(--md-sys-sha
 .admin-member-dialog > footer > span { flex: 1; }
 .button-danger { border: 1px solid #d9a5a0; background: #fff2f0; color: #9e3f3d; }
 .button-danger:hover { background: #fbe1de; }
+.member-remove-button { min-height: 32px; padding: 0 9px; color: #9e3f3d; font-size: 10px; }
+.member-remove-button:hover { background: #fff0ee; color: #7f2f31; }
 
 @media (max-width: 620px) {
   .admin-console-member-action { padding: 6px; font-size: 0; }

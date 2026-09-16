@@ -75,13 +75,23 @@ export async function DELETE(_request: NextRequest, { params }: { params: Promis
     ` as Array<{ user_id: string; role: AppRole }>;
     if (!members.length) return errorJson('Esta pessoa não pertence à organização.', 404);
 
-    const result = await auth.admin.removeUser({ userId });
-    if (result.error) return errorJson('Não foi possível remover a conta no Neon Auth.', 400);
-    await context.db`
+    const removed = await context.db`
       delete from public.organization_members
       where organization_id = ${context.organizationId}::uuid and user_id = ${userId}
-    `;
-    return json({ data: { userId, removed: true } });
+      returning user_id
+    ` as Array<{ user_id: string }>;
+    if (!removed.length) return errorJson('O acesso já não está vinculado a esta organização.', 404);
+
+    // A expulsão do espaço não depende da exclusão da conta no Neon Auth.
+    // Isso também cobre contas migradas cujo user_id não é o ID atual do Auth.
+    let authAccountRemoved = false;
+    try {
+      const result = await auth.admin.removeUser({ userId });
+      authAccountRemoved = !result.error;
+    } catch {
+      // A pessoa já perdeu o acesso à organização; a conta pode ser limpa depois.
+    }
+    return json({ data: { userId, removed: true, authAccountRemoved } });
   } catch (error) {
     return databaseErrorResponse(error);
   }
