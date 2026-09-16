@@ -14,7 +14,7 @@ type AdminData = {
 type Invitation = {
   id: string;
   email: string;
-  role: 'recruiter' | 'viewer';
+  role: 'manager' | 'recruiter' | 'viewer';
   expires_at: string;
   created_at: string;
 };
@@ -32,7 +32,7 @@ export function AdminClient() {
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [members, setMembers] = useState<Member[]>([]);
   const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'recruiter' | 'viewer'>('recruiter');
+  const [role, setRole] = useState<'manager' | 'recruiter' | 'viewer'>('recruiter');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [revoking, setRevoking] = useState('');
@@ -146,7 +146,7 @@ export function AdminClient() {
           <div className="panel-header"><div><h2>Novo acesso</h2><p>O link vale por 7 dias e só pode ser usado uma vez.</p></div><Icon name="plus" /></div>
           <form className="admin-invite-form" onSubmit={createInvitation}>
             <div className="field"><label htmlFor="invite-email">E-mail da pessoa</label><input className="form-input" id="invite-email" type="email" autoComplete="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="pessoa@empresa.com" /></div>
-            <div className="field"><label htmlFor="invite-role">Papel no Majurh</label><select className="form-select" id="invite-role" value={role} onChange={(event) => setRole(event.target.value as 'recruiter' | 'viewer')}><option value="recruiter">Recrutador — pode operar o RH</option><option value="viewer">Visualizador — somente consulta</option></select></div>
+            <div className="field"><label htmlFor="invite-role">Papel no Majurh</label><select className="form-select" id="invite-role" value={role} onChange={(event) => setRole(event.target.value as 'manager' | 'recruiter' | 'viewer')}><option value="manager">Gerente — acompanha a operação</option><option value="recruiter">Recrutador — pode operar o RH</option><option value="viewer">Visualizador — somente consulta</option></select></div>
             <button className="button button-primary" disabled={saving}>{saving ? 'Criando convite…' : 'Criar convite'}<Icon name="arrow-up-right" size={16} /></button>
           </form>
           {createdInvite && <div className="invite-created"><strong>Link pronto para enviar</strong><span>{createdInvite.email}</span><div className="invite-url"><code>{createdInvite.url}</code><button type="button" className="button button-secondary" onClick={copyInvite}>{copied ? 'Copiado' : 'Copiar link'}</button></div><small>O link abre uma tela segura para a pessoa criar a senha e concluir o acesso.</small></div>}
@@ -172,7 +172,7 @@ export function AdminClient() {
 }
 
 function roleLabel(role: string) {
-  return role === 'admin' ? 'Administrador' : role === 'recruiter' ? 'Recrutador' : 'Visualizador';
+  return role === 'admin' ? 'Administrador' : role === 'manager' ? 'Gerente' : role === 'recruiter' ? 'Recrutador' : 'Visualizador';
 }
 
 function initials(name: string) {

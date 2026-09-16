@@ -9,6 +9,8 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
 import { PresenceHeartbeat } from '@/components/presence/presence-heartbeat';
+import { TimeTrackerProvider } from '@/components/productivity/time-tracker-provider';
+import { AnimatedGearIcon } from '@/components/ui/animated-gear';
 
 type Profile = {
   id: string;
@@ -36,6 +38,10 @@ const navItems: Array<{ href: string; label: string; icon: IconName }> = [
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  return <TimeTrackerProvider><AppShellContent>{children}</AppShellContent></TimeTrackerProvider>;
+}
+
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -197,7 +203,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span>Administração</span>
           </Link>}
           <Link className={`sidebar-link ${pathname.startsWith('/configuracoes') ? 'is-active' : ''}`} href="/configuracoes" aria-current={pathname.startsWith('/configuracoes') ? 'page' : undefined}>
-            <Icon name="settings" />
+            <AnimatedGearIcon />
             <span>Configurações</span>
           </Link>
         </nav>

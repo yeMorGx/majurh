@@ -61,7 +61,7 @@ async function withCandidateContext(
     const { db, userId } = await getAuthenticatedClient();
     if (!userId) return errorJson('É necessário estar autenticado.', 401);
     const role = await getOrganizationRole(db, userId, organizationId);
-    const levels = { viewer: 1, recruiter: 2, admin: 3 };
+    const levels = { viewer: 1, manager: 2, recruiter: 2, admin: 3 };
     if (!role || levels[role] < levels[requiredRole]) return errorJson('Você não tem permissão para esta operação.', 403);
     return handler({ db, organizationId, id });
   } catch (error) {

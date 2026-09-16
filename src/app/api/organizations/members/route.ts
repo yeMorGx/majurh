@@ -17,11 +17,12 @@ type PresenceStatus = (typeof presenceStatuses)[number];
 type MemberRow = {
   user_id: string;
   email: string | null;
-  role: 'admin' | 'recruiter' | 'viewer';
+  role: 'admin' | 'manager' | 'recruiter' | 'viewer';
   created_at: string;
   full_name: string;
   presence_status: PresenceStatus;
   presence_updated_at: string | null;
+  presence_context: string | null;
   is_current_user: boolean;
 };
 
@@ -46,6 +47,10 @@ export async function GET(request: NextRequest) {
             else om.presence_status
           end as presence_status,
           om.presence_updated_at,
+          case
+            when om.presence_updated_at < now() - interval '90 seconds' then null
+            else om.presence_context
+          end as presence_context,
           (om.user_id = ${userId}) as is_current_user
         from public.organization_members om
         left join public.profiles p on p.id = om.user_id
@@ -70,6 +75,7 @@ export async function GET(request: NextRequest) {
           coalesce(nullif(p.full_name, ''), nullif(lau.full_name, ''), nullif(split_part(om.email, '@', 1), ''), 'Membro da equipe') as full_name,
           'offline' as presence_status,
           null as presence_updated_at,
+          null as presence_context,
           (om.user_id = ${userId}) as is_current_user
         from public.organization_members om
         left join public.profiles p on p.id = om.user_id
@@ -100,6 +106,7 @@ export async function PATCH(request: NextRequest) {
 
     const organizationId = body.organizationId;
     const status = body.status;
+    const context = typeof body.context === 'string' ? body.context.trim().slice(0, 160) || null : null;
     const { db, userId } = await getAuthenticatedClient();
     if (!userId) return errorJson('É necessário estar autenticado.', 401);
     const role = await getOrganizationRole(db, userId, organizationId);
@@ -107,13 +114,13 @@ export async function PATCH(request: NextRequest) {
 
     const rows = await db`
       update public.organization_members
-      set presence_status = ${status}, presence_updated_at = now()
+      set presence_status = ${status}, presence_updated_at = now(), presence_context = ${context}, presence_context_updated_at = now()
       where organization_id = ${organizationId}::uuid and user_id = ${userId}
-      returning presence_status, presence_updated_at
-    ` as Array<{ presence_status: PresenceStatus; presence_updated_at: string }>;
+      returning presence_status, presence_updated_at, presence_context
+    ` as Array<{ presence_status: PresenceStatus; presence_updated_at: string; presence_context: string | null }>;
 
     if (!rows.length) return errorJson('Membro não encontrado nesta organização.', 404);
-    return json({ data: { status: rows[0].presence_status, updatedAt: rows[0].presence_updated_at } });
+    return json({ data: { status: rows[0].presence_status, context: rows[0].presence_context, updatedAt: rows[0].presence_updated_at } });
   } catch (error) {
     return databaseErrorResponse(error);
   }

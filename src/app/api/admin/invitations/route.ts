@@ -7,7 +7,7 @@ import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-type AppRole = 'recruiter' | 'viewer';
+type AppRole = 'manager' | 'recruiter' | 'viewer';
 
 export async function GET() {
   try {
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return errorJson('Informe um e-mail válido.', 400);
     }
 
-    const role = body.role === 'viewer' ? 'viewer' : body.role === 'recruiter' || body.role === undefined ? 'recruiter' : null;
+    const role = body.role === 'viewer' ? 'viewer' : body.role === 'manager' ? 'manager' : body.role === 'recruiter' || body.role === undefined ? 'recruiter' : null;
     if (!role) return errorJson('Escolha um papel válido para o convite.', 400);
 
     const context = await getAdminContext();

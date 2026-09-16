@@ -1523,3 +1523,29 @@ kbd { border-color: var(--md-sys-color-outline); border-radius: var(--md-sys-sha
   .login-alt-methods { margin-top: 15px; }
   .login-alt-method { height: 48px; }
 }
+
+/* Administração: ações de ciclo de vida dos acessos. */
+.admin-console-member-action { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; padding: 7px 9px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 10px; background: transparent; color: var(--md-sys-color-primary); font-size: 10px; font-weight: 750; }
+.admin-console-member-action:hover { background: var(--md-sys-color-primary-container); border-color: var(--md-sys-color-primary); }
+.admin-member-dialog-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(35, 15, 19, .42); backdrop-filter: blur(5px); }
+.admin-member-dialog { width: min(520px, 100%); overflow: hidden; border: 1px solid var(--md-sys-color-outline-variant); border-radius: 24px; background: var(--md-sys-color-surface); box-shadow: 0 24px 70px rgba(35,15,19,.2); }
+.admin-member-dialog > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 24px; border-bottom: 1px solid var(--md-sys-color-outline-variant); }
+.admin-member-dialog h2 { margin: 3px 0 4px; font-family: var(--font-display); font-size: 25px; letter-spacing: -.055em; }
+.admin-member-dialog header p:last-child { margin: 0; color: var(--md-sys-color-on-surface-variant); font-size: 11px; }
+.admin-member-dialog-body { display: grid; gap: 16px; padding: 22px 24px; }
+.admin-member-dialog-body .admin-console-field { display: grid; gap: 7px; }
+.admin-member-dialog-body label > span { font-size: 11px; font-weight: 750; }
+.admin-member-dialog-body small { color: var(--md-sys-color-on-surface-variant); font-size: 10px; }
+.admin-member-dialog > footer { display: flex; align-items: center; gap: 8px; padding: 16px 24px 20px; border-top: 1px solid var(--md-sys-color-outline-variant); }
+.admin-member-dialog > footer > span { flex: 1; }
+.button-danger { border: 1px solid #d9a5a0; background: #fff2f0; color: #9e3f3d; }
+.button-danger:hover { background: #fbe1de; }
+
+@media (max-width: 620px) {
+  .admin-console-member-action { padding: 6px; font-size: 0; }
+  .admin-member-dialog-backdrop { align-items: end; padding: 8px; }
+  .admin-member-dialog { border-radius: 24px 24px 0 0; }
+  .admin-member-dialog > footer { flex-wrap: wrap; }
+  .admin-member-dialog > footer > span { display: none; }
+  .admin-member-dialog > footer .button-danger { margin-right: auto; }
+}

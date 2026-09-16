@@ -18,11 +18,12 @@ type PresenceStatus = 'online' | 'offline' | 'away' | 'busy';
 type OrganizationMember = {
   user_id: string;
   email: string | null;
-  role: 'admin' | 'recruiter' | 'viewer';
+  role: 'admin' | 'manager' | 'recruiter' | 'viewer';
   created_at: string;
   full_name: string;
   presence_status: PresenceStatus;
   presence_updated_at: string | null;
+  presence_context: string | null;
   is_current_user: boolean;
 };
 
@@ -52,13 +53,12 @@ export function OrganizationClient() {
   const [form, setForm] = useState<FormState>(emptyForm);
   const [members, setMembers] = useState<OrganizationMember[]>([]);
   const [presence, setPresence] = useState<PresenceStatus>('offline');
-  const [loginUrl, setLoginUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [membersLoading, setMembersLoading] = useState(true);
-  const [presenceSaving, setPresenceSaving] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingAsset, setUploadingAsset] = useState<'logo' | 'login-banner' | ''>('');
   const [customizationOpen, setCustomizationOpen] = useState(false);
+  const [customizationTab, setCustomizationTab] = useState<'identity' | 'site'>('identity');
   const [error, setError] = useState('');
   const [membersError, setMembersError] = useState('');
   const [message, setMessage] = useState('');
@@ -94,7 +94,6 @@ export function OrganizationClient() {
           const nextForm = toForm(current);
           formRef.current = nextForm;
           setForm(nextForm);
-          setLoginUrl(`${window.location.origin}/login?org=${encodeURIComponent(current.slug)}`);
         }
       })
       .catch((loadError) => { if (active) setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar a organização.'); })
@@ -118,7 +117,6 @@ export function OrganizationClient() {
         formRef.current = nextForm;
         setForm(nextForm);
       }
-      setLoginUrl(`${window.location.origin}/login?org=${encodeURIComponent(next.slug)}`);
     }
 
     function handleOrganizationUpdated(event: Event) {
@@ -161,13 +159,14 @@ export function OrganizationClient() {
     let hasLoaded = false;
 
     function handlePresenceUpdated(event: Event) {
-      const detail = (event as CustomEvent<{ organizationId?: string; status?: PresenceStatus; updatedAt?: string }>).detail;
+      const detail = (event as CustomEvent<{ organizationId?: string; status?: PresenceStatus; context?: string | null; updatedAt?: string }>).detail;
       if (detail?.organizationId !== currentOrganizationId || !detail.status) return;
       presenceRef.current = detail.status;
       setPresence(detail.status);
       setMembers((current) => current.map((member) => member.is_current_user ? {
         ...member,
         presence_status: detail.status as PresenceStatus,
+        presence_context: detail.context ?? null,
         presence_updated_at: detail.updatedAt ?? new Date().toISOString(),
       } : member));
     }
@@ -258,7 +257,6 @@ export function OrganizationClient() {
       const nextForm = toForm(updated);
       formRef.current = nextForm;
       setForm(nextForm);
-      setLoginUrl(`${window.location.origin}/login?org=${encodeURIComponent(updated.slug)}`);
       publishOrganizationUpdate(updated);
       setMessage('Identidade e tela de login atualizadas.');
     } catch {
@@ -293,40 +291,6 @@ export function OrganizationClient() {
     }
   }
 
-  async function updatePresence(nextStatus: PresenceStatus) {
-    if (!organization || nextStatus === presence || presenceSaving) return;
-    const previousStatus = presenceRef.current;
-    const manualStatusKey = `majurh:presence-manual:${organization.id}`;
-    const previousManualStatus = window.localStorage.getItem(manualStatusKey);
-    presenceRef.current = nextStatus;
-    setPresence(nextStatus);
-    if (nextStatus === 'online') window.localStorage.removeItem(manualStatusKey);
-    else window.localStorage.setItem(manualStatusKey, nextStatus);
-    window.dispatchEvent(new CustomEvent('presence:manual-status', { detail: { organizationId: organization.id, status: nextStatus } }));
-    setPresenceSaving(true);
-    setMembersError('');
-    try {
-      const response = await fetch('/api/organizations/members', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: organization.id, status: nextStatus }),
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload.error || 'Não foi possível atualizar seu status.');
-      const currentMember = members.find((member) => member.is_current_user);
-      updateMemberStatus(setMembers, currentMember?.user_id, nextStatus);
-    } catch (presenceError) {
-      presenceRef.current = previousStatus;
-      setPresence(previousStatus);
-      if (previousManualStatus) window.localStorage.setItem(manualStatusKey, previousManualStatus);
-      else window.localStorage.removeItem(manualStatusKey);
-      window.dispatchEvent(new CustomEvent('presence:manual-status', { detail: { organizationId: organization.id, status: previousStatus } }));
-      setMembersError(presenceError instanceof Error ? presenceError.message : 'Não foi possível atualizar seu status.');
-    } finally {
-      setPresenceSaving(false);
-    }
-  }
-
   if (loading) return <div className="loading-state">Carregando organização</div>;
   if (!organization) return <div className="form-error" role="alert">{error || 'Organização não encontrada.'}</div>;
 
@@ -338,7 +302,6 @@ export function OrganizationClient() {
   const offlineCount = members.filter((member) => member.presence_status === 'offline').length;
   const presenceRate = members.length ? Math.round((onlineCount / members.length) * 100) : 0;
   const visibleMembers = members.filter((member) => member.presence_status !== 'offline').slice(0, 5);
-  const currentMember = members.find((member) => member.is_current_user);
 
   return (
     <div className="organization-page">
@@ -349,8 +312,7 @@ export function OrganizationClient() {
           <p>Veja quem está por perto e mantenha a identidade do seu ambiente sob controle.</p>
         </div>
         <div className="heading-actions">
-          <a className="button button-secondary" href={loginUrl} target="_blank" rel="noreferrer"><Icon name="arrow-up-right" />Abrir login</a>
-          {canManage && <button className="button button-primary" type="button" onClick={() => { setError(''); setMessage(''); setCustomizationOpen(true); }}><Icon name="settings" />Personalizar</button>}
+          {canManage && <button className="button button-primary" type="button" onClick={() => { setError(''); setMessage(''); setCustomizationTab('identity'); setCustomizationOpen(true); }}><Icon name="settings" />Personalizar</button>}
         </div>
       </header>
 
@@ -385,6 +347,29 @@ export function OrganizationClient() {
         </aside>
       </section>
 
+      <section className="organization-control-grid" aria-label="Controles da organização">
+        <article className="organization-control-card organization-control-identity">
+          <div className="organization-control-icon"><Icon name="briefcase" size={19} /></div>
+          <div><p className="eyebrow">Identidade</p><h2>{organization.name}</h2><p>Logo, nome e presença oficial da organização em todo o Majurh.</p></div>
+          <button className="organization-text-action" type="button" onClick={() => { setCustomizationTab('identity'); setCustomizationOpen(true); }}>Editar identidade <Icon name="arrow-up-right" size={14} /></button>
+        </article>
+        <article className="organization-control-card organization-control-site">
+          <div className="organization-control-icon"><Icon name="eye" size={19} /></div>
+          <div><p className="eyebrow">Site de acesso</p><h2>Experiência de entrada</h2><p>Cores, banner e mensagens que aparecem para a sua equipe no login.</p></div>
+          <button className="organization-text-action" type="button" onClick={() => { setCustomizationTab('site'); setCustomizationOpen(true); }}>Editar site <Icon name="arrow-up-right" size={14} /></button>
+        </article>
+        <article className="organization-control-card organization-control-access">
+          <div className="organization-control-icon"><Icon name="check-circle" size={19} /></div>
+          <div><p className="eyebrow">Acessos</p><h2>Governança do time</h2><p>{members.length} {members.length === 1 ? 'pessoa tem' : 'pessoas têm'} acesso. Papéis e senhas são gerenciados no centro administrativo.</p></div>
+          {canManage ? <a className="organization-text-action" href="/administracao">Gerenciar equipe <Icon name="arrow-up-right" size={14} /></a> : <span className="organization-control-note">Somente administradores</span>}
+        </article>
+      </section>
+
+      <section className="organization-team-productivity panel" aria-labelledby="organization-productivity-title">
+        <div className="organization-team-productivity-heading"><div><p className="eyebrow">Ritmo da equipe</p><h2 id="organization-productivity-title">Produtividade do espaço</h2><p>Uma leitura rápida do trabalho compartilhado, separada do seu foco pessoal.</p></div><a className="button button-secondary" href="/produtividade"><Icon name="kanban" size={16} />Abrir produtividade</a></div>
+        <div className="organization-productivity-columns"><div><span className="organization-productivity-label">Fluxo do time</span><strong>Kanban compartilhado</strong><small>Organize prioridades e próximos movimentos em conjunto.</small></div><div><span className="organization-productivity-label">Presença</span><strong>{onlineCount} online agora</strong><small>O status é atualizado automaticamente pela atividade do app.</small></div><div><span className="organization-productivity-label">Foco</span><strong>{busyCount} em atividade</strong><small>Time tracker e reuniões aparecem como contexto da pessoa.</small></div></div>
+      </section>
+
       <section id="organization-members-section" className="organization-members-panel panel" aria-labelledby="organization-members-title">
         <div className="organization-members-header">
           <div className="organization-members-title">
@@ -398,7 +383,7 @@ export function OrganizationClient() {
           <div className="organization-presence-summary" aria-label="Resumo dos status da equipe">
             {presenceOptions.map((status) => <span key={status}><i className={`presence-dot presence-${status}`} />{members.filter((member) => member.presence_status === status).length} {presenceMeta[status].label.toLowerCase()}</span>)}
           </div>
-          {currentMember && <label className="organization-own-presence"><span>Seu status</span><select className="filter-select" value={presence} disabled={presenceSaving} onChange={(event) => updatePresence(event.target.value as PresenceStatus)}>{presenceOptions.map((status) => <option value={status} key={status}>{presenceMeta[status].label}</option>)}</select></label>}
+          <span className="organization-auto-presence"><i className={`presence-dot presence-${presence}`} />Seu status: <strong>{presenceMeta[presence].label}</strong><small>Atualizado automaticamente</small></span>
         </div>
 
         {membersError && <div className="form-error organization-members-error" role="alert">{membersError}</div>}
@@ -410,13 +395,14 @@ export function OrganizationClient() {
       {customizationOpen && <div className="modal-backdrop organization-customization-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setCustomizationOpen(false); }}>
         <section className="modal-card organization-customization-modal" role="dialog" aria-modal="true" aria-labelledby="organization-customization-title" onMouseDown={(event) => event.stopPropagation()}>
           <header className="organization-modal-header">
-            <div className="organization-modal-title"><span className="organization-modal-icon"><Icon name="settings" size={18} /></span><div><p className="eyebrow">White-label</p><h2 id="organization-customization-title">Personalização</h2><p>Altere a presença da sua marca no espaço e na tela de login.</p></div></div>
+            <div className="organization-modal-title"><span className="organization-modal-icon"><Icon name="settings" size={18} /></span><div><p className="eyebrow">White-label</p><h2 id="organization-customization-title">Personalização</h2><p>Separe a identidade institucional da experiência de entrada.</p></div></div>
             <button ref={closeCustomizationRef} className="icon-button" type="button" onClick={() => setCustomizationOpen(false)} aria-label="Fechar personalização"><Icon name="x" size={18} /></button>
           </header>
           {error && <div className="form-error organization-modal-feedback" role="alert">{error}</div>}
           {message && <div className="form-success organization-modal-feedback" role="status">{message}</div>}
           {!canManage && <p className="studio-notice organization-modal-feedback">Você está no modo de consulta. A edição está disponível para administradores.</p>}
-          <CustomizationForm organization={organization} form={form} previewOrganization={previewOrganization} logo={logo} dirty={dirty} loginUrl={loginUrl} canManage={canManage} saving={saving} uploadingAsset={uploadingAsset} onSubmit={save} onUpdate={update} onUploadAsset={uploadAsset} />
+          <div className="customization-tabs" role="tablist" aria-label="Área de personalização"><button type="button" className={customizationTab === 'identity' ? 'is-active' : ''} onClick={() => setCustomizationTab('identity')} role="tab" aria-selected={customizationTab === 'identity'}><Icon name="briefcase" size={16} /><span>Identidade da organização<small>Nome, logo e equipe</small></span></button><button type="button" className={customizationTab === 'site' ? 'is-active' : ''} onClick={() => setCustomizationTab('site')} role="tab" aria-selected={customizationTab === 'site'}><Icon name="eye" size={16} /><span>Site de acesso<small>Cores, banner e mensagens</small></span></button></div>
+          <CustomizationForm tab={customizationTab} organization={organization} form={form} previewOrganization={previewOrganization} logo={logo} dirty={dirty} canManage={canManage} saving={saving} uploadingAsset={uploadingAsset} onSubmit={save} onUpdate={update} onUploadAsset={uploadAsset} />
         </section>
       </div>}
     </div>
@@ -427,19 +413,19 @@ function MemberRow({ member }: { member: OrganizationMember }) {
   const status = presenceMeta[member.presence_status];
   return <li className="organization-member-row">
     <div className="member-avatar" aria-hidden="true"><span>{initials(member.full_name, member.email)}</span><i className={`presence-dot presence-${member.presence_status}`} /></div>
-    <div className="organization-member-copy"><strong>{member.full_name}{member.is_current_user && <span className="member-you">Você</span>}</strong><span>{member.email || 'E-mail não informado'}</span></div>
+    <div className="organization-member-copy"><strong>{member.full_name}{member.is_current_user && <span className="member-you">Você</span>}</strong><span>{member.email || 'E-mail não informado'}</span>{member.presence_context && <small className="member-presence-context">{member.presence_context}</small>}</div>
     <span className={`presence-badge presence-badge-${member.presence_status}`}><i className={`presence-dot presence-${member.presence_status}`} />{status.label}</span>
     <span className="member-role">{roleLabel(member.role)}</span>
   </li>;
 }
 
-function CustomizationForm({ organization, form, previewOrganization, logo, dirty, loginUrl, canManage, saving, uploadingAsset, onSubmit, onUpdate, onUploadAsset }: {
+function CustomizationForm({ tab, organization, form, previewOrganization, logo, dirty, canManage, saving, uploadingAsset, onSubmit, onUpdate, onUploadAsset }: {
+  tab: 'identity' | 'site';
   organization: OrganizationBrand;
   form: FormState;
   previewOrganization: OrganizationBrand | null;
   logo: string;
   dirty: boolean;
-  loginUrl: string;
   canManage: boolean;
   saving: boolean;
   uploadingAsset: 'logo' | 'login-banner' | '';
@@ -449,6 +435,7 @@ function CustomizationForm({ organization, form, previewOrganization, logo, dirt
 }) {
   const banner = getOrganizationAssetUrl(organization, 'login-banner') || '/brand/majurh-login-art.png';
   return <form onSubmit={onSubmit} className="studio-grid organization-customization-form" aria-busy={saving || !!uploadingAsset} style={{ ...getBrandStyle(previewOrganization), '--studio-on-brand': foregroundFor(form.primaryColor) } as CSSProperties}>
+    {tab === 'identity' && <>
     <section className="studio-tile studio-identity">
       <div className="studio-tile-top"><span><Icon name="briefcase" />Identidade</span><span className="studio-tag">/{organization.slug}</span></div>
       <div className="studio-identity-art"><div className="studio-logo-shape"><img src={logo} alt="Logo da organização" /></div><div><span>O lugar da sua equipe</span><strong>{form.name || organization.name}</strong><small>Powered by Majurh</small></div></div>
@@ -457,6 +444,8 @@ function CustomizationForm({ organization, form, previewOrganization, logo, dirt
       <p className="studio-help">Os arquivos são aplicados assim que o envio termina.</p>
     </section>
 
+    </>}
+    {tab === 'site' && <>
     <section className="studio-tile studio-colors">
       <div className="studio-tile-top"><span><Icon name="settings" />Cores da marca</span></div>
       <h2>Encontre o seu tom.</h2><p>A combinação que acompanha sua equipe pelo espaço.</p>
@@ -481,18 +470,13 @@ function CustomizationForm({ organization, form, previewOrganization, logo, dirt
 
     <section className="studio-tile studio-team"><div className="studio-team-symbol" aria-hidden="true"><Icon name="users" size={36} /></div><div><span className="studio-overline">Construído em equipe</span><h2>As pessoas fazem o espaço.</h2><p>Convide pessoas e defina o papel de cada uma na organização.</p>{canManage ? <a className="button" href="/administracao">Gerenciar convites <Icon name="arrow-up-right" /></a> : <p>Peça novos convites ao administrador.</p>}</div></section>
 
+    </>}
     <footer className="studio-savebar"><div><Icon name={dirty ? 'clock' : 'check-circle'} /><span>{saving ? 'Salvando alterações…' : dirty ? 'Você tem alterações para salvar' : 'Identidade atualizada'}<small>Nome, cores e textos são publicados ao salvar.</small></span></div>{canManage && <button className="button button-primary" disabled={!dirty || saving || !!uploadingAsset}>Salvar alterações <Icon name="check" /></button>}</footer>
-    <a className="organization-modal-login-link" href={loginUrl} target="_blank" rel="noreferrer">Abrir a tela de login em uma nova aba <Icon name="arrow-up-right" size={14} /></a>
   </form>;
 }
 
-function updateMemberStatus(setMembers: React.Dispatch<React.SetStateAction<OrganizationMember[]>>, userId: string | undefined, status: PresenceStatus) {
-  if (!userId) return;
-  setMembers((current) => current.map((member) => member.user_id === userId ? { ...member, presence_status: status, presence_updated_at: new Date().toISOString() } : member));
-}
-
 function roleLabel(role: string) {
-  return role === 'admin' ? 'Administrador' : role === 'viewer' ? 'Visualizador' : 'Equipe RH';
+  return role === 'admin' ? 'Administrador' : role === 'manager' ? 'Gerente' : role === 'viewer' ? 'Visualizador' : 'Equipe RH';
 }
 
 function initials(name: string, email: string | null) {

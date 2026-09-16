@@ -3,7 +3,7 @@
 import { Icon } from '@/components/ui/icon';
 import { useEffect, useMemo, useState } from 'react';
 
-type AppRole = 'recruiter' | 'viewer';
+type AppRole = 'manager' | 'recruiter' | 'viewer';
 
 type Member = {
   user_id: string;
@@ -37,6 +37,10 @@ export function AdminConsoleClient() {
   const [message, setMessage] = useState('');
   const [createdAccess, setCreatedAccess] = useState<CreatedAccess | null>(null);
   const [copied, setCopied] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [editRole, setEditRole] = useState<Member['role']>('recruiter');
+  const [newMemberPassword, setNewMemberPassword] = useState('');
+  const [memberSaving, setMemberSaving] = useState(false);
 
   async function loadUsers() {
     const response = await fetch('/api/admin/users', { cache: 'no-store' });
@@ -106,6 +110,56 @@ export function AdminConsoleClient() {
     setCopied(true);
   }
 
+  function openMemberEditor(member: Member) {
+    setEditingMember(member);
+    setEditRole(member.role);
+    setNewMemberPassword('');
+    setError('');
+  }
+
+  async function saveMember() {
+    if (!editingMember) return;
+    setMemberSaving(true);
+    setError('');
+    setMessage('');
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(editingMember.user_id)}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: editRole, ...(newMemberPassword ? { password: newMemberPassword } : {}) }),
+      });
+      const payload = await response.json();
+      if (!response.ok) { setError(payload.error || 'Não foi possível atualizar este acesso.'); return; }
+      setEditingMember(null);
+      setNewMemberPassword('');
+      setMessage('Acesso atualizado.');
+      await loadUsers();
+    } catch {
+      setError('Não foi possível atualizar este acesso.');
+    } finally {
+      setMemberSaving(false);
+    }
+  }
+
+  async function removeMember() {
+    if (!editingMember || editingMember.role === 'admin' && admins <= 1) return;
+    if (!window.confirm(`Remover ${editingMember.full_name} da organização? A conta também será excluída.`)) return;
+    setMemberSaving(true);
+    setError('');
+    try {
+      const response = await fetch(`/api/admin/users/${encodeURIComponent(editingMember.user_id)}`, { method: 'DELETE' });
+      const payload = await response.json();
+      if (!response.ok) { setError(payload.error || 'Não foi possível remover este acesso.'); return; }
+      setEditingMember(null);
+      setMessage('Pessoa removida da organização.');
+      await loadUsers();
+    } catch {
+      setError('Não foi possível remover este acesso.');
+    } finally {
+      setMemberSaving(false);
+    }
+  }
+
   if (loading) {
     return <main className="admin-console-page"><div className="admin-console-loading" role="status">Carregando centro administrativo…</div></main>;
   }
@@ -150,21 +204,23 @@ export function AdminConsoleClient() {
               <div className="admin-console-field"><label htmlFor="admin-user-name">Nome completo</label><input id="admin-user-name" className="form-input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Ex.: Maria Julia" autoComplete="name" required minLength={2} maxLength={120} /></div>
               <div className="admin-console-field"><label htmlFor="admin-user-email">E-mail de acesso</label><input id="admin-user-email" className="form-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} placeholder="pessoa@empresa.com.br" autoComplete="email" required /></div>
               <div className="admin-console-field"><div className="admin-console-label-row"><label htmlFor="admin-user-password">Senha temporária</label><button type="button" className="admin-console-generate" onClick={generatePassword}>Gerar senha</button></div><div className="admin-console-password-field"><input id="admin-user-password" className="form-input" type="text" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} maxLength={128} autoComplete="new-password" required /><Icon name="key" size={16} /></div><small>A pessoa poderá trocar a senha depois de entrar.</small></div>
-              <div className="admin-console-field"><label htmlFor="admin-user-role">Papel no Majurh</label><select id="admin-user-role" className="form-select" value={role} onChange={(event) => setRole(event.target.value as AppRole)}><option value="recruiter">Recrutador — opera o RH</option><option value="viewer">Visualizador — somente consulta</option></select></div>
+              <div className="admin-console-field"><label htmlFor="admin-user-role">Papel no Majurh</label><select id="admin-user-role" className="form-select" value={role} onChange={(event) => setRole(event.target.value as AppRole)}><option value="manager">Gerente — acompanha a operação</option><option value="recruiter">Recrutador — opera o RH</option><option value="viewer">Visualizador — somente consulta</option></select></div>
               <button className="button button-primary admin-console-submit" disabled={saving}>{saving ? 'Criando acesso…' : 'Criar acesso'}<Icon name="arrow-up-right" size={16} /></button>
             </form>
           </section>
 
           <aside className="admin-console-card admin-console-guide-card">
-            <div className="admin-console-card-heading"><span className="admin-console-icon admin-console-icon-dark"><Icon name="check-circle" /></span><div><p className="eyebrow">Fluxo seguro</p><h2>Como funciona</h2></div></div>
-            <div className="admin-console-steps"><div><b>01</b><span><strong>Você cria o acesso</strong><small>O Neon Auth registra a conta com a senha definida.</small></span></div><div><b>02</b><span><strong>O Majurh vincula a equipe</strong><small>O perfil e o papel são gravados no espaço da organização.</small></span></div><div><b>03</b><span><strong>A pessoa entra pelo login</strong><small>Não existe cadastro público nesta versão.</small></span></div></div>
-            <div className="admin-console-note"><Icon name="clock" size={16} /><span>A senha temporária é exibida apenas nesta tela. Copie e envie por um canal seguro.</span></div>
+            <div className="admin-console-card-heading"><span className="admin-console-icon admin-console-icon-dark"><Icon name="check-circle" /></span><div><p className="eyebrow">Governança ativa</p><h2>Regras desta organização</h2><p>O centro administrativo é o único caminho para novos acessos.</p></div></div>
+            <div className="admin-console-steps"><div><b>01</b><span><strong>Conta individual</strong><small>Um e-mail só pode ter uma conta e pertencer a uma organização.</small></span></div><div><b>02</b><span><strong>Papel explícito</strong><small>Administrador, gerente, recrutador ou visualizador definem o alcance.</small></span></div><div><b>03</b><span><strong>Alteração reversível</strong><small>Troque papel e senha ou remova o acesso sem abrir cadastro público.</small></span></div></div>
+            <div className="admin-console-note"><Icon name="key" size={16} /><span>Use uma senha temporária única e envie as credenciais por um canal seguro.</span></div>
           </aside>
         </div>
 
         {createdAccess && <section className="admin-console-credential" role="status"><div className="admin-console-credential-main"><span className="admin-console-credential-icon"><Icon name="check" size={18} /></span><div><p className="eyebrow">Acesso pronto</p><h2>{createdAccess.name} já pode entrar</h2><p>{createdAccess.email} · {roleLabel(createdAccess.role)}</p></div></div><div className="admin-console-credential-password"><span>Senha temporária</span><code>{createdAccess.password}</code></div><button type="button" className="button button-secondary" onClick={copyCredentials}>{copied ? 'Credenciais copiadas' : 'Copiar credenciais'}<Icon name="file-text" size={15} /></button></section>}
 
-        <section className="admin-console-card admin-console-members-card"><div className="admin-console-card-heading"><span className="admin-console-icon"><Icon name="users" /></span><div><p className="eyebrow">Equipe da organização</p><h2>Pessoas com acesso</h2><p>Contas vinculadas a {data?.organization.name || 'esta organização'}.</p></div><span className="admin-console-count">{data?.members.length ?? 0} acessos</span></div>{data?.members.length ? <div className="admin-console-member-list">{data.members.map((member) => <div className="admin-console-member" key={member.user_id}><span className="admin-console-avatar">{initials(member.full_name)}</span><span className="admin-console-member-copy"><strong>{member.full_name}</strong><small>{member.email || 'E-mail não disponível'}</small></span><span className={`admin-console-role admin-console-role-${member.role}`}>{roleLabel(member.role)}</span></div>)}</div> : <div className="admin-console-empty"><Icon name="users" size={20} /><strong>Nenhum acesso encontrado</strong><p>Crie o primeiro usuário acima para começar.</p></div>}</section>
+        <section className="admin-console-card admin-console-members-card"><div className="admin-console-card-heading"><span className="admin-console-icon"><Icon name="users" /></span><div><p className="eyebrow">Equipe da organização</p><h2>Pessoas com acesso</h2><p>Contas vinculadas a {data?.organization.name || 'esta organização'}.</p></div><span className="admin-console-count">{data?.members.length ?? 0} acessos</span></div>{data?.members.length ? <div className="admin-console-member-list">{data.members.map((member) => <div className="admin-console-member" key={member.user_id}><span className="admin-console-avatar">{initials(member.full_name)}</span><span className="admin-console-member-copy"><strong>{member.full_name}</strong><small>{member.email || 'E-mail não disponível'}</small></span><span className={`admin-console-role admin-console-role-${member.role}`}>{roleLabel(member.role)}</span><button className="admin-console-member-action" type="button" onClick={() => openMemberEditor(member)}>{member.role === 'admin' ? 'Gerenciar' : 'Editar'} <Icon name="chevron-right" size={14} /></button></div>)}</div> : <div className="admin-console-empty"><Icon name="users" size={20} /><strong>Nenhum acesso encontrado</strong><p>Crie o primeiro usuário acima para começar.</p></div>}</section>
+
+        {editingMember && <div className="admin-member-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingMember(null); }}><section className="admin-member-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-member-dialog-title" onMouseDown={(event) => event.stopPropagation()}><header><div><p className="eyebrow">Gerenciar acesso</p><h2 id="admin-member-dialog-title">{editingMember.full_name}</h2><p>{editingMember.email || 'E-mail não disponível'}</p></div><button className="icon-button" type="button" onClick={() => setEditingMember(null)} aria-label="Fechar"><Icon name="x" size={17} /></button></header><div className="admin-member-dialog-body"><label className="admin-console-field"><span>Papel na organização</span><select className="form-select" value={editRole} onChange={(event) => setEditRole(event.target.value as Member['role'])}><option value="admin">Administrador</option><option value="manager">Gerente</option><option value="recruiter">Recrutador</option><option value="viewer">Visualizador</option></select></label><label className="admin-console-field"><span>Nova senha (opcional)</span><input className="form-input" type="password" value={newMemberPassword} onChange={(event) => setNewMemberPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} maxLength={128} autoComplete="new-password" /><small>Deixe em branco para manter a senha atual.</small></label></div><footer><button className="button button-danger" type="button" disabled={memberSaving || editingMember.role === 'admin' && admins <= 1} onClick={removeMember}>Remover acesso</button><span /><button className="button button-secondary" type="button" onClick={() => setEditingMember(null)}>Cancelar</button><button className="button button-primary" type="button" disabled={memberSaving} onClick={saveMember}>{memberSaving ? 'Salvando…' : 'Salvar alterações'}</button></footer></section></div>}
 
         <footer className="admin-console-footer"><span>Majurh · administração isolada</span><span>Neon Auth + Neon Postgres</span></footer>
       </div>
@@ -173,7 +229,7 @@ export function AdminConsoleClient() {
 }
 
 function roleLabel(role: string) {
-  return role === 'admin' ? 'Administrador' : role === 'recruiter' ? 'Recrutador' : 'Visualizador';
+  return role === 'admin' ? 'Administrador' : role === 'manager' ? 'Gerente' : role === 'recruiter' ? 'Recrutador' : 'Visualizador';
 }
 
 function initials(name: string) {

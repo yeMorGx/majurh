@@ -6,7 +6,7 @@ import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-type AppRole = 'recruiter' | 'viewer';
+type AppRole = 'manager' | 'recruiter' | 'viewer';
 
 export async function GET() {
   try {
@@ -45,9 +45,11 @@ export async function POST(request: NextRequest) {
     const password = typeof body.password === 'string' ? body.password : '';
     const role: AppRole | null = body.role === 'viewer'
       ? 'viewer'
-      : body.role === 'recruiter' || body.role === undefined
-        ? 'recruiter'
-        : null;
+      : body.role === 'manager'
+        ? 'manager'
+        : body.role === 'recruiter' || body.role === undefined
+          ? 'recruiter'
+          : null;
 
     if (name.length < 2 || name.length > 120) {
       return errorJson('Informe o nome completo (de 2 a 120 caracteres).', 400);

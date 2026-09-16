@@ -54,7 +54,7 @@ export async function getOrganizationRole(
     where organization_id = ${organizationId}::uuid
       and user_id = ${userId}
     limit 1
-  `) as Array<{ role: 'admin' | 'recruiter' | 'viewer' }>;
+  `) as Array<{ role: 'admin' | 'manager' | 'recruiter' | 'viewer' }>;
 
   return rows[0]?.role ?? null;
 }
