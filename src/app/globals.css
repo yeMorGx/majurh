@@ -757,6 +757,60 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
   .button, .icon-button, .sidebar-link, .form-input, .form-select, .form-textarea, .filter-select, .mini-list-item, .progress-track span { transition: none !important; }
 }
 
+/* Revisão visual global — login, console administrativo e superfícies públicas. */
+.login-page-reference {
+  grid-template-columns: minmax(440px, 41%) minmax(0, 59%);
+  overflow-x: hidden;
+}
+
+.login-page-reference .login-reference-form-side { align-items: center; padding: 28px clamp(28px, 5vw, 72px); }
+.login-reference-form-wrap { width: min(100%, 410px); padding: 24px 0 28px; }
+.login-reference-brand { gap: 11px; margin-bottom: 26px; }
+.login-reference-mark, .login-reference-mark img { width: 102px; height: 42px; }
+.login-reference-mark.is-custom { width: min(100%, 170px); }
+.login-reference-mark.is-custom img { max-width: 170px; max-height: 42px; }
+.login-reference-wordmark { font-size: clamp(42px, 4.6vw, 62px); }
+.login-page-reference .login-reference-tagline { margin-bottom: 28px; font-size: clamp(17px, 1.6vw, 20px); }
+.login-page-reference .login-form { gap: 12px; }
+.login-page-reference .login-reference-field { grid-template-columns: minmax(0, 1fr) 54px; gap: 12px; }
+.login-page-reference .login-form .form-input { min-height: 54px; height: 54px; border-radius: 14px; font-size: 13px; }
+.login-field-icon { width: 54px; height: 54px; border-radius: 16px; }
+.login-page-reference .login-reference-submit { min-height: 60px; margin-top: 17px; border-radius: 12px; font-size: clamp(25px, 2.4vw, 34px); }
+.login-alt-methods { width: 100%; margin: 22px 0 0; grid-template-columns: repeat(4, minmax(0, 62px)); gap: 12px; }
+.login-alt-method { width: 62px; height: 62px; border-radius: 12px; box-shadow: 0 6px 14px rgba(74,17,25,.1); transition: transform 220ms cubic-bezier(.2,.8,.2,1), border-color 180ms ease, box-shadow 180ms ease; }
+.login-alt-method:hover { transform: translateY(-3px); border-color: rgba(255,255,255,.55); box-shadow: 0 10px 20px rgba(74,17,25,.18); }
+.login-page-reference .login-reference-art-side { min-height: 100%; }
+
+.admin-console-page { background: var(--vc-shell); }
+.admin-console-hero { min-height: 256px; padding: 30px 34px 23px; border-radius: 22px; background: linear-gradient(135deg, #42131b 0%, #5d2029 62%, #7b302c 100%); box-shadow: 0 12px 28px rgba(74,17,25,.12); }
+.admin-console-hero::before, .admin-console-hero::after, .admin-console-orbit { display: none; }
+.admin-console-hero h1 { max-width: 640px; font-size: clamp(34px, 4vw, 50px); }
+.admin-console-card { border-radius: 18px; box-shadow: var(--shadow-card); }
+.admin-console-icon { border-radius: 11px; }
+.admin-console-status, .admin-console-count, .admin-console-role { border-radius: 10px; }
+.admin-console-empty { border-radius: 12px; }
+
+@media (max-width: 620px) {
+  .login-page-reference { grid-template-columns: 1fr; width: 100%; }
+  .login-page-reference .login-reference-form-side { padding: 0 20px; }
+  .login-reference-form-wrap { padding: 24px 0 24px; }
+  .login-reference-brand { margin-bottom: 22px; }
+  .login-page-reference .login-reference-wordmark { font-size: 44px; }
+  .login-page-reference .login-reference-tagline { margin-bottom: 22px; font-size: 16px; }
+  .login-page-reference .login-reference-field { grid-template-columns: minmax(0, 1fr) 48px; gap: 9px; }
+  .login-page-reference .login-form .form-input, .login-field-icon { min-height: 48px; height: 48px; }
+  .login-field-icon { width: 48px; }
+  .login-page-reference .login-reference-submit { min-height: 56px; margin-top: 13px; font-size: 28px; }
+  .login-alt-methods { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+  .login-alt-method { width: 100%; height: 56px; }
+  .admin-console-hero { min-height: 286px; padding: 26px 22px 20px; border-radius: 18px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-alt-method { transition: none; }
+  .login-alt-method:hover { transform: none; }
+}
+
 /* Produtividade — uma camada de trabalho focado dentro do workspace. */
 .productivity-page { --productivity-lilac: #7763a8; --productivity-lilac-soft: #f0ecfb; --productivity-blue-soft: #e7f1f7; --productivity-peach: #fff0e5; min-width: 0; }
 .productivity-hero { position: relative; display: flex; align-items: flex-end; justify-content: space-between; gap: 28px; min-height: 204px; padding: 30px 32px; overflow: hidden; border: 1px solid var(--vc-forest); border-radius: 20px; background: var(--vc-forest); color: white; box-shadow: 0 16px 38px rgba(74,17,25,0.12); }

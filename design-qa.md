@@ -79,3 +79,39 @@ final result: passed (registro histórico do login; consultar a revisão abaixo 
 - Compilação Next e etapa TypeScript passaram. A build completa falhou na coleta de dados porque `NEON_AUTH_BASE_URL` está ausente no ambiente local. Nenhum arquivo de ambiente ou credencial foi alterado.
 - Detector mecânico de UI não reportou achados; isso não substitui testes funcionais.
 - Pendente: testar paletas, salvar, recarregar e enviar imagem com sessão autenticada e ambiente configurado antes de considerar o fluxo validado ponta a ponta.
+
+## Auditoria de redesign global — 16/09/2026
+
+### Direção
+
+O produto é uma ferramenta B2B de RH usada diariamente por equipes operacionais. A revisão preserva a arquitetura Material 3 já adotada e aplica uma direção editorial mais silenciosa: vinho e coral como acento, superfícies quentes, tipografia com contraste de escala, controles retangulares com cantos moderados e movimento reservado para feedback.
+
+Os controles da revisão foram `DESIGN_VARIANCE 5`, `MOTION_INTENSITY 4` e `VISUAL_DENSITY 6`. A Taste Skill foi usada como referência anti-template para reduzir decorações genéricas; o Aislop foi usado como auditor mecânico de qualidade e acessibilidade. Como este é um produto denso, as recomendações de landing page da Taste Skill foram filtradas para não sacrificar velocidade de leitura, tabelas ou navegação.
+
+### Achados e decisões
+
+- O shell combinava seleções em cápsula, cards grandes e vários raios diferentes. A navegação agora usa indicador lateral, 12 px de raio e estados de hover discretos.
+- Os controles principais tinham a mesma linguagem de pílula dos badges. Botões de ação passaram a usar 12 px de raio; pílulas ficam reservadas para status, papéis e contadores.
+- Dashboard, organização, produtividade, candidatos, documentos, vagas e processos passaram a compartilhar a mesma superfície, borda, sombra, foco e escala de títulos.
+- O login tinha excesso vertical em telas compactas. Campos, submit e métodos alternativos receberam uma escala menor e um limite de largura mais previsível, preservando a composição da referência.
+- A área administrativa tinha uma hero muito ornamental. Os círculos decorativos foram removidos e o destaque ficou na hierarquia, no contraste e nas ações.
+- O uso de círculos permanece apenas onde há semântica ou função clara: avatar, presença, status e progresso.
+
+### Escopo aplicado
+
+- `src/app/(app)/workspace.css`: camada final do sistema visual autenticado, responsividade do shell, navegação, tabelas, formulários, cards, organização e produtividade.
+- `src/app/globals.css`: compactação do login, estados dos métodos de acesso e consolidação visual do console administrativo.
+- Correções mecânicas identificadas pelo Aislop: imports não utilizados, import duplicado e tipo sem uso.
+
+### Critério de conclusão desta etapa
+
+Considerar a revisão concluída quando as rotas existentes mantiverem o mesmo fluxo funcional, o shell não apresentar overflow horizontal em desktop ou mobile, os estados de foco continuarem visíveis e `typecheck`, `build`, `git diff --check` e uma nova varredura do Aislop forem executados após a aplicação.
+
+### Verificação final da aplicação
+
+- `npm run typecheck`: passou.
+- `npm run build`: passou; 16 páginas estáticas geradas e APIs compiladas.
+- `git diff --check`: passou.
+- `npx aislop scan --json`: score 59, label `Needs Work`, com 18 erros conservadores de segurança, 96 avisos totais e três achados AI Slop não mecânicos restantes.
+- QA visual via `next start`: login conferido em 1280 × 720 e 390 × 844; no mobile a coluna desktop foi corrigida para `1fr` e não há overflow horizontal.
+- O servidor de produção local foi encerrado após a inspeção; nenhum arquivo de ambiente ou credencial foi alterado.

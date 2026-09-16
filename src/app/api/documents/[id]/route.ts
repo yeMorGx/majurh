@@ -1,6 +1,6 @@
 import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
 import { databaseErrorResponse, errorJson, isRecord, isUuid, json } from '@/lib/api/http';
-import { documentSelect, documentStatuses, type DocumentStatus } from '@/lib/documents/constants';
+import { documentSelect, type DocumentStatus } from '@/lib/documents/constants';
 import { parseDocumentReviewPayload } from '@/lib/documents/validation';
 import { NextRequest } from 'next/server';
 

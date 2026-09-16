@@ -1,10 +1,9 @@
 import { del, put } from '@vercel/blob';
 import { getAuthenticatedClient, getOrganizationRole } from '@/lib/api/auth';
 import { companyLogoPath, validateCompanyLogo } from '@/lib/companies/assets';
-import { companySelect } from '@/lib/companies/constants';
+import { companySelect, companySelectBase } from '@/lib/companies/constants';
 import { parseCompanyPayload } from '@/lib/companies/validation';
 import { databaseErrorResponse, errorJson, isRecord, isUndefinedColumnError, isUuid, json } from '@/lib/api/http';
-import { companySelectBase } from '@/lib/companies/constants';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';

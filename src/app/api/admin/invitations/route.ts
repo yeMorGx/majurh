@@ -7,8 +7,6 @@ import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
 
-type AppRole = 'manager' | 'recruiter' | 'viewer';
-
 export async function GET() {
   try {
     const context = await getAdminContext();

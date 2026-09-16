@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
-import { StatusBadge, statusLabel } from '@/components/ui/status-badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
