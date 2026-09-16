@@ -23,6 +23,8 @@ Durante o preenchimento, o e-mail sugere domínios comuns localmente e indica qu
 
 A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. As migrações `0002` a `0005` já foram aplicadas no banco Neon; configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
 
+A migração `neon/migrations/0006_companies_vacancies_identity.sql` cria o cadastro de empresas contratantes, adiciona quantidade e empresa às vagas e inclui a escolha RG/CIN na ficha do candidato. Execute-a no branch principal antes de usar `/empresas`, `/vagas` ou o escaneamento de documentos.
+
 ## Variáveis locais
 
 Copie `.env.example` para `.env.local` e preencha os valores fornecidos pela integração Neon/Vercel:
@@ -58,6 +60,12 @@ Ela cria:
 - gatilhos de atualização e normalização de CPF.
 
 As consultas são executadas exclusivamente no servidor e cada rota valida o vínculo do usuário com a organização antes de ler ou alterar dados.
+
+### Empresas, vagas e documentos de identidade
+
+`/empresas` é o cadastro de apoio da organização. A empresa pode ser ativada ou inativada e depois selecionada em `/vagas`. Cada vaga registra o cargo, a empresa contratante, a unidade, o departamento e a quantidade de posições abertas; essa quantidade também aparece ao iniciar um processo seletivo.
+
+No cadastro de candidato, o tipo de identidade pode ser RG ou CIN. O componente de escaneamento aceita uma imagem local ou a câmera do dispositivo, executa OCR no navegador para sugerir nome, CPF, número de identidade e nascimento e só envia o arquivo para o bucket privado quando o cadastro é salvo. A leitura é uma sugestão: o RH deve revisar os campos antes de confirmar.
 
 ## Neon Auth
 

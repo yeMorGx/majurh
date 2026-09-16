@@ -28,6 +28,7 @@ const navItems: Array<{ href: string; label: string; icon: IconName }> = [
   { href: '/dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
   { href: '/candidatos', label: 'Candidatos', icon: 'users' },
   { href: '/processos', label: 'Processos', icon: 'git-branch' },
+  { href: '/vagas', label: 'Vagas', icon: 'briefcase' },
   { href: '/documentos', label: 'Documentos', icon: 'file-check' },
   { href: '/produtividade', label: 'Produtividade', icon: 'kanban' },
 ];
@@ -156,6 +157,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {me?.organization && <Link className={`sidebar-link ${pathname.startsWith('/organizacao') ? 'is-active' : ''}`} href="/organizacao" aria-current={pathname.startsWith('/organizacao') ? 'page' : undefined}>
             <Icon name="briefcase" />
             <span>Organização</span>
+          </Link>}
+          {me?.organization && <Link className={`sidebar-link ${pathname.startsWith('/empresas') ? 'is-active' : ''}`} href="/empresas" aria-current={pathname.startsWith('/empresas') ? 'page' : undefined}>
+            <Icon name="building" />
+            <span>Empresas</span>
           </Link>}
           {me?.membership?.role === 'admin' && <Link className={`sidebar-link ${pathname.startsWith('/administracao') ? 'is-active' : ''}`} href="/administracao" aria-current={pathname.startsWith('/administracao') ? 'page' : undefined}>
             <Icon name="users" />

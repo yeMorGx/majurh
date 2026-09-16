@@ -1201,6 +1201,77 @@ kbd { border-color: var(--md-sys-color-outline); border-radius: var(--md-sys-sha
   .data-table th, .data-table td { padding-right: 16px; padding-left: 16px; }
 }
 
+/* Cadastros operacionais — empresas, vagas e leitura local de documentos. */
+.heading-stat { display: grid; min-width: 132px; gap: 2px; align-content: center; padding: 14px 18px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: var(--md-sys-shape-corner-large); background: var(--md-sys-color-surface-container); text-align: right; }
+.heading-stat strong { color: var(--md-sys-color-primary); font-family: var(--font-display); font-size: 28px; line-height: 1; letter-spacing: -0.06em; }
+.heading-stat span { color: var(--md-sys-color-on-surface-variant); font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; }
+.company-page-grid { align-items: stretch; margin-bottom: 18px; }
+.company-intro-panel { position: relative; display: flex; flex-direction: column; justify-content: flex-end; min-height: 292px; overflow: hidden; background: linear-gradient(145deg, var(--md-sys-color-primary), color-mix(in srgb, var(--md-sys-color-primary) 72%, #5e171e)); color: var(--md-sys-color-on-primary); }
+.company-intro-panel::after { content: ''; position: absolute; width: 230px; height: 230px; right: -84px; top: -76px; border: 1px solid rgba(255,255,255,.2); border-radius: 50%; box-shadow: 0 0 0 22px rgba(255,255,255,.04), 0 0 0 46px rgba(255,255,255,.04); }
+.company-intro-panel > * { position: relative; z-index: 1; max-width: 430px; }
+.company-intro-symbol { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: auto; border: 1px solid rgba(255,255,255,.2); border-radius: var(--md-sys-shape-corner-large); background: rgba(255,255,255,.12); color: #ffd9cf; }
+.company-intro-panel .eyebrow { color: rgba(255,255,255,.7); }
+.company-intro-panel h2 { margin: 4px 0 10px; color: white; font-family: var(--font-display); font-size: clamp(28px, 3vw, 40px); line-height: 1.02; letter-spacing: -0.065em; }
+.company-intro-panel > p:last-child { margin: 0; color: rgba(255,255,255,.73); font-size: 13px; line-height: 1.55; }
+.company-list-panel { margin-top: 18px; }
+.company-list { display: grid; }
+.company-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 14px; min-height: 74px; padding: 12px 0; border-top: 1px solid var(--md-sys-color-outline-variant); }
+.company-row:first-child { border-top: 0; }
+.company-row-icon, .vacancy-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: var(--md-sys-shape-corner-medium); background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-primary); }
+.company-row-copy, .vacancy-copy { min-width: 0; display: grid; gap: 4px; }
+.company-row-copy strong, .vacancy-copy strong { overflow: hidden; color: var(--md-sys-color-on-surface); text-overflow: ellipsis; white-space: nowrap; }
+.company-row-copy span, .vacancy-copy span { overflow: hidden; color: var(--md-sys-color-on-surface-variant); font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.company-toggle, .vacancy-toggle { white-space: nowrap; }
+.company-form-actions { align-items: end; justify-content: flex-end; }
+.vacancy-create-panel, .vacancy-list-panel { margin-bottom: 18px; }
+.vacancy-form-expanded { display: grid; grid-template-columns: minmax(170px, 1.2fr) minmax(190px, 1fr) 150px repeat(2, minmax(145px, 1fr)) auto; align-items: end; gap: 12px; }
+.vacancy-form-expanded .button { min-height: 48px; white-space: nowrap; }
+.vacancy-list { display: grid; }
+.vacancy-row-rich { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto auto; align-items: center; gap: 14px; min-height: 74px; padding: 12px 0; border-top: 1px solid var(--md-sys-color-outline-variant); }
+.vacancy-row-rich:first-child { border-top: 0; }
+.vacancy-quantity { display: grid; min-width: 70px; gap: 3px; text-align: right; }
+.vacancy-quantity strong { color: var(--md-sys-color-primary); font-family: var(--font-display); font-size: 20px; line-height: 1; }
+.vacancy-quantity span { color: var(--md-sys-color-on-surface-variant); font-size: 10px; text-transform: uppercase; }
+.scanner-card { display: grid; gap: 18px; margin: 24px 0; padding: 20px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: var(--md-sys-shape-corner-extra-large); background: var(--md-sys-color-surface-container-low); }
+.scanner-heading { display: flex; align-items: flex-start; gap: 12px; }
+.scanner-heading h3 { margin: 0; color: var(--md-sys-color-on-surface); font-family: var(--font-display); font-size: 19px; letter-spacing: -0.04em; }
+.scanner-heading p { max-width: 620px; margin: 4px 0 0; color: var(--md-sys-color-on-surface-variant); font-size: 12px; line-height: 1.45; }
+.scanner-icon { display: grid; place-items: center; width: 38px; height: 38px; flex: 0 0 38px; border-radius: var(--md-sys-shape-corner-medium); background: var(--md-sys-color-primary-container); color: var(--md-sys-color-primary); }
+.scanner-controls { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(230px, 1fr); align-items: end; gap: 14px; }
+.scanner-upload { position: relative; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 9px 13px; border: 1px dashed var(--md-sys-color-outline); border-radius: var(--md-sys-shape-corner-medium); background: var(--md-sys-color-surface); color: var(--md-sys-color-primary); cursor: pointer; transition: border-color 180ms ease, background 180ms ease, transform 180ms ease; }
+.scanner-upload:hover { border-color: var(--md-sys-color-primary); background: var(--md-sys-color-primary-container); transform: translateY(-1px); }
+.scanner-upload span { display: grid; gap: 2px; }
+.scanner-upload strong { color: var(--md-sys-color-on-surface); font-size: 12px; }
+.scanner-upload small { color: var(--md-sys-color-on-surface-variant); font-size: 10px; }
+.scanner-upload input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.scanner-preview { display: grid; grid-template-columns: 70px minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 10px; border: 1px solid var(--md-sys-color-outline-variant); border-radius: var(--md-sys-shape-corner-large); background: var(--md-sys-color-surface); }
+.scanner-preview img { width: 70px; height: 70px; border-radius: var(--md-sys-shape-corner-medium); object-fit: cover; }
+.scanner-preview > div { min-width: 0; display: grid; gap: 4px; }
+.scanner-preview > div strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.scanner-preview > div span, .scanner-status { color: var(--md-sys-color-on-surface-variant); font-size: 12px; line-height: 1.4; }
+.scanner-status { margin: 0; }
+.scanner-raw { border-top: 1px solid var(--md-sys-color-outline-variant); padding-top: 12px; color: var(--md-sys-color-on-surface-variant); font-size: 11px; }
+.scanner-raw summary { cursor: pointer; font-weight: 700; }
+.scanner-raw pre { max-height: 150px; margin: 10px 0 0; overflow: auto; white-space: pre-wrap; }
+
+@media (max-width: 1120px) {
+  .vacancy-form-expanded { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .vacancy-form-expanded .button { grid-column: span 3; justify-self: start; }
+}
+
+@media (max-width: 760px) {
+  .company-page-grid { grid-template-columns: 1fr; }
+  .company-row, .vacancy-row-rich { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .company-row .vacancy-state, .company-row .company-toggle, .vacancy-row-rich .vacancy-state, .vacancy-row-rich .vacancy-toggle { grid-column: 2 / -1; justify-self: start; }
+  .vacancy-quantity { grid-column: 3; grid-row: 1; }
+  .scanner-controls, .scanner-preview { grid-template-columns: 1fr; }
+  .scanner-preview .button { justify-self: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scanner-upload { transition: none; }
+}
+
 /* Organização — painel de marca com prévia viva. */
 .organization-page { min-width: 0; }
 .organization-hero-card { position: relative; display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr); min-height: 262px; margin-bottom: 32px; padding: 36px 40px; overflow: hidden; border: 1px solid var(--md-sys-color-primary); border-radius: var(--md-sys-shape-corner-extra-large); background: var(--md-sys-color-primary); color: var(--md-sys-color-on-primary); box-shadow: 0 10px 26px color-mix(in srgb, var(--md-sys-color-primary) 20%, transparent); }

@@ -4,6 +4,7 @@ export const SIGNED_URL_TTL_SECONDS = 5 * 60;
 
 export const documentTypes = [
   'rg',
+  'cin',
   'cpf',
   'cnh',
   'proof_of_address',

@@ -1,6 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
+import { DocumentScanner } from '@/components/documents/document-scanner';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -11,6 +12,7 @@ type ExistingCandidate = {
   cpf: string;
   cpf_normalized: string;
   rg: string | null;
+  identity_document_type: 'rg' | 'cin';
   birth_date: string | null;
   phone: string | null;
   email: string | null;
@@ -29,9 +31,10 @@ type FormState = {
   city: string;
   state: string;
   notes: string;
+  identity_document_type: 'rg' | 'cin';
 };
 
-const initialForm: FormState = { full_name: '', cpf: '', rg: '', birth_date: '', phone: '', email: '', city: '', state: '', notes: '' };
+const initialForm: FormState = { full_name: '', cpf: '', rg: '', identity_document_type: 'rg', birth_date: '', phone: '', email: '', city: '', state: '', notes: '' };
 
 export function NewCandidateForm() {
   const router = useRouter();
@@ -41,6 +44,7 @@ export function NewCandidateForm() {
   const [checkingCpf, setCheckingCpf] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [scannerFile, setScannerFile] = useState<File | null>(null);
 
   useEffect(() => {
     fetch('/api/me', { cache: 'no-store' })
@@ -75,6 +79,7 @@ export function NewCandidateForm() {
             ...current,
             full_name: match.full_name,
             rg: match.rg ?? '',
+            identity_document_type: match.identity_document_type ?? 'rg',
             birth_date: match.birth_date ?? '',
             phone: match.phone ?? '',
             email: match.email ?? '',
@@ -121,6 +126,17 @@ export function NewCandidateForm() {
         setErrors(payload.fields ?? [payload.error ?? 'Não foi possível salvar o candidato.']);
         return;
       }
+      if (scannerFile) {
+        const documentData = new FormData();
+        documentData.set('organizationId', organizationId);
+        documentData.set('candidate_id', payload.data.id);
+        documentData.set('document_type', form.identity_document_type);
+        documentData.set('file', scannerFile);
+        const documentResponse = await fetch('/api/documents', { method: 'POST', body: documentData });
+        if (!documentResponse.ok) {
+          setErrors(['Candidato salvo, mas não foi possível anexar o documento escaneado. Você poderá enviá-lo pelo perfil.']);
+        }
+      }
       router.push(`/candidatos/${payload.data.id}`);
     } catch {
       setErrors(['Não foi possível salvar o candidato. Tente novamente.']);
@@ -137,12 +153,26 @@ export function NewCandidateForm() {
         <div className="form-grid">
           <div className="field field-full"><label htmlFor="full_name">Nome completo *</label><input className="form-input" id="full_name" required value={form.full_name} onChange={(event) => update('full_name', event.target.value)} placeholder="Ex.: Maria Souza" /></div>
           <div className="field"><label htmlFor="cpf">CPF *</label><input className="form-input mono" id="cpf" required value={form.cpf} onChange={(event) => update('cpf', event.target.value)} placeholder="000.000.000-00" aria-describedby="cpf-hint" />{checkingCpf && <small id="cpf-hint">Buscando na base interna…</small>}{!checkingCpf && !duplicateCandidate && form.cpf.replace(/\D/g, '').length === 11 && <small id="cpf-hint">Nenhuma ficha encontrada. Continue para cadastrar.</small>}{duplicateCandidate && <div className="duplicate-alert" role="alert"><span className="duplicate-icon"><Icon name="users" size={16} /></span><span><strong>Dados preenchidos da ficha existente</strong><span>{duplicateCandidate.full_name} já possui um histórico no RH. A ficha foi preenchida automaticamente.</span><Link href={`/candidatos/${duplicateCandidate.id}`}>Abrir histórico <Icon name="arrow-up-right" size={13} /></Link></span></div>}</div>
-          <div className="field"><label htmlFor="rg">RG</label><input className="form-input" id="rg" value={form.rg} onChange={(event) => update('rg', event.target.value)} placeholder="Número do documento" /></div>
+          <div className="field"><label htmlFor="identity_document_type">Documento de identidade</label><select className="form-select" id="identity_document_type" value={form.identity_document_type} onChange={(event) => update('identity_document_type', event.target.value as 'rg' | 'cin')}><option value="rg">RG — Registro Geral</option><option value="cin">CIN — Carteira de Identidade Nacional</option></select></div>
+          <div className="field"><label htmlFor="rg">Número do {form.identity_document_type === 'cin' ? 'CIN' : 'RG'}</label><input className="form-input" id="rg" value={form.rg} onChange={(event) => update('rg', event.target.value)} placeholder={`Número do ${form.identity_document_type === 'cin' ? 'CIN' : 'documento'}`} /></div>
           <div className="field"><label htmlFor="birth_date">Data de nascimento</label><input className="form-input" id="birth_date" type="date" value={form.birth_date} onChange={(event) => update('birth_date', event.target.value)} /></div>
           <div className="field"><label htmlFor="phone">Telefone</label><input className="form-input" id="phone" type="tel" value={form.phone} onChange={(event) => update('phone', event.target.value)} placeholder="(00) 00000-0000" /></div>
           <div className="field"><label htmlFor="email">E-mail</label><input className="form-input" id="email" type="email" value={form.email} onChange={(event) => update('email', event.target.value)} placeholder="maria@email.com" /></div>
         </div>
       </div>
+
+      <DocumentScanner
+        documentType={form.identity_document_type}
+        onDocumentTypeChange={(value) => update('identity_document_type', value)}
+        onFileReady={setScannerFile}
+        onExtract={(fields) => setForm((current) => ({
+          ...current,
+          full_name: fields.full_name || current.full_name,
+          cpf: fields.cpf || current.cpf,
+          rg: fields.rg || current.rg,
+          birth_date: fields.birth_date || current.birth_date,
+        }))}
+      />
 
       <div className="form-section"><h2>Localidade</h2><p>Informações opcionais para contato e organização.</p><div className="form-grid"><div className="field"><label htmlFor="city">Cidade</label><input className="form-input" id="city" value={form.city} onChange={(event) => update('city', event.target.value)} /></div><div className="field"><label htmlFor="state">Estado</label><input className="form-input" id="state" maxLength={2} value={form.state} onChange={(event) => update('state', event.target.value.toUpperCase())} placeholder="SP" /></div></div></div>
 

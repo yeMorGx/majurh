@@ -14,6 +14,20 @@ export const processStatuses = [
 
 export type ProcessStatus = (typeof processStatuses)[number];
 
+export const processStageDescriptions: Record<ProcessStatus, string> = {
+  new: 'Candidato adicionado ao processo e aguardando a primeira análise.',
+  screening: 'O RH confere aderência, requisitos e informações básicas da ficha.',
+  interview: 'Entrevista agendada ou em andamento com a pessoa candidata.',
+  evaluation: 'Avaliação técnica, comportamental ou específica da função.',
+  approved: 'Candidato aprovado e pronto para seguir para a documentação.',
+  documentation: 'Documentos sendo recebidos, conferidos e validados pelo RH.',
+  admission: 'Admissão em preparação com as informações finais da contratação.',
+  hired: 'Contratação concluída para esta participação.',
+  rejected: 'Participação encerrada sem aprovação nesta oportunidade.',
+  withdrawn: 'A pessoa candidata desistiu deste processo.',
+  talent_pool: 'Perfil mantido no banco para futuras oportunidades.',
+};
+
 export const candidateSources = [
   'linkedin',
   'indeed',

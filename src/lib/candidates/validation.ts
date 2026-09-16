@@ -8,6 +8,7 @@ export type CandidatePayload = {
   cpf?: string;
   cpf_normalized?: string;
   rg?: string | null;
+  identity_document_type?: 'rg' | 'cin';
   birth_date?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -97,6 +98,16 @@ export function parseCandidatePayload(
             payload.cpf_normalized = normalized;
           }
         }
+      }
+      continue;
+    }
+
+    if (field === 'identity_document_type') {
+      if (!hasField && mode === 'create') {
+        payload.identity_document_type = 'rg';
+      } else if (hasField) {
+        if (input[field] !== 'rg' && input[field] !== 'cin') errors.push('Escolha RG ou CIN.');
+        else payload.identity_document_type = input[field] as 'rg' | 'cin';
       }
       continue;
     }

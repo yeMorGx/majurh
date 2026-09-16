@@ -61,12 +61,12 @@ export async function POST(request: NextRequest) {
     const value = parsed.data;
     const rows = await db`
       insert into public.candidates (
-        organization_id, full_name, cpf, cpf_normalized, rg, birth_date, phone, email,
+        organization_id, full_name, cpf, cpf_normalized, rg, identity_document_type, birth_date, phone, email,
         postal_code, street, address_number, address_complement, neighborhood, city, state,
         cnh_number, cnh_category, cnh_expires_at, notes, created_by
       ) values (
         ${body.organizationId}, ${value.full_name}, ${value.cpf}, ${value.cpf_normalized},
-        ${value.rg ?? null}, ${value.birth_date ?? null}, ${value.phone ?? null}, ${value.email ?? null},
+        ${value.rg ?? null}, ${value.identity_document_type ?? 'rg'}, ${value.birth_date ?? null}, ${value.phone ?? null}, ${value.email ?? null},
         ${value.postal_code ?? null}, ${value.street ?? null}, ${value.address_number ?? null},
         ${value.address_complement ?? null}, ${value.neighborhood ?? null}, ${value.city ?? null},
         ${value.state ?? null}, ${value.cnh_number ?? null}, ${value.cnh_category ?? null},
