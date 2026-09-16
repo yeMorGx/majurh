@@ -50,7 +50,7 @@ export default function AdminLoginPage() {
       const response = await fetch('/api/auth/request-password-reset', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), redirectTo: 'https://majurh.vercel.app/reset-password' }),
+        body: JSON.stringify({ email: email.trim(), redirectTo: 'https://majurh-admin.vercel.app/reset-password' }),
       });
       if (!response.ok) throw new Error('reset');
       setResetSent(true);
