@@ -9,6 +9,7 @@ type Member = { user_id: string; email: string; role: Role; full_name: string; c
 type SiteSettings = { available: boolean; maintenanceMode: boolean; publicSiteUrl: string; analyticsPropertyId: string; analyticsMeasurementId: string; updatedAt: string | null };
 type Overview = {
   organization: { name: string; slug: string };
+  scope: 'global';
   members: Member[];
   metrics: { members: number; candidates: number; processes: number; pending_documents: number };
   site: SiteSettings;
@@ -143,7 +144,7 @@ export function AdminConsole() {
     <main className="admin-shell">
       <aside className="admin-rail">
         <div className="admin-rail-brand"><span className="admin-brand-mark" aria-hidden="true">M</span><span>Majurh <small>admin</small></span></div>
-        <div className="admin-rail-context"><span>Organização ativa</span><strong>{overview?.organization.name || 'Sem organização'}</strong><small>{memberCountLabel}</small></div>
+        <div className="admin-rail-context"><span>Escopo do console</span><strong>{overview?.scope === 'global' ? 'Site inteiro' : overview?.organization.name || 'Sem organização'}</strong><small>{memberCountLabel} na organização principal</small></div>
         <nav className="admin-nav" aria-label="Navegação administrativa">
           <NavButton active={tab === 'overview'} onClick={() => selectTab('overview')} label="Visão geral" hint="01" />
           <NavButton active={tab === 'users'} onClick={() => selectTab('users')} label="Usuários" hint="02" />
@@ -155,7 +156,7 @@ export function AdminConsole() {
       <section className="admin-workspace">
         <header className="admin-topbar"><div><span className="admin-topbar-label">Console privado</span><span className="admin-topbar-separator">/</span><span>{tabLabel(tab)}</span></div><div className="admin-topbar-actions"><span className="admin-live-status"><i aria-hidden="true" /> Neon conectado</span><button className="admin-text-button" onClick={() => void signOut()}>Sair</button></div></header>
         <div className="admin-content">
-          <div className="admin-heading-row"><div><p className="admin-kicker">{overview?.organization.name || 'Organização'}</p><h1>{headingFor(tab)}</h1><p className="admin-page-intro">{introFor(tab)}</p></div><span className="admin-date-note">Dados protegidos por sessão administrativa</span></div>
+          <div className="admin-heading-row"><div><p className="admin-kicker">{overview?.scope === 'global' ? 'Majurh / administração global' : overview?.organization.name || 'Organização'}</p><h1>{headingFor(tab)}</h1><p className="admin-page-intro">{introFor(tab)}</p></div><span className="admin-date-note">Dados protegidos por sessão administrativa</span></div>
           {error && <div className="admin-alert admin-alert-error" role="alert">{error}</div>}
           {notice && <output className="admin-alert admin-alert-success">{notice}</output>}
           {tab === 'overview' && <OverviewPanel overview={overview} onUsers={() => selectTab('users')} onSite={() => selectTab('site')} />}

@@ -25,6 +25,8 @@ Durante o preenchimento, o e-mail sugere domínios comuns localmente e indica qu
 
 A migração `neon/migrations/0002_white_label_branding.sql` adiciona os campos básicos de identidade à tabela `public.organizations`. A migração `neon/migrations/0003_admin_invitations_and_login_branding.sql` adiciona os campos de texto da tela de login, o e-mail dos membros e a tabela de convites. A migração `neon/migrations/0004_brand_assets_as_files.sql` adiciona os pathnames dos arquivos de logo e banner. A migração `neon/migrations/0005_integrations_foundation.sql` prepara o cadastro seguro das integrações. A migração `neon/migrations/0007_unique_member_email.sql` normaliza e-mails, e a `neon/migrations/0008_strict_member_email_guard.sql` bloqueia novos vínculos duplicados com lock transacional. A migração `neon/migrations/0009_company_logos.sql` adiciona o pathname privado da logo de cada empresa. O índice único definitivo em `organization_members.email` será criado depois da limpeza do vínculo histórico duplicado já identificado. As migrações `0002` a `0008` já foram aplicadas no banco Neon; aplique também a `0009` antes de usar o upload de logos e configure `INTEGRATIONS_ENCRYPTION_KEY` antes de salvar credenciais de provedores.
 
+A migração `neon/migrations/0015_site_admins.sql` cria os administradores globais do Majurh. Contas em `public.site_admins` acessam o console separado sem precisar estar associadas a uma organização.
+
 A migração `neon/migrations/0006_companies_vacancies_identity.sql` cria o cadastro de empresas contratantes, adiciona quantidade e empresa às vagas e inclui a escolha RG/CIN na ficha do candidato. Execute-a no branch principal antes de usar `/empresas`, `/vagas` ou o escaneamento de documentos.
 
 ## Variáveis locais

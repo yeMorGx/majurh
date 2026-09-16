@@ -5,7 +5,7 @@ O Majurh agora tem dois projetos Next.js no mesmo repositório:
 - `maju/`: produto operacional, usado por recrutadores e gestores;
 - `maju/admin-portal/`: console privado de administração, publicado como um projeto Vercel separado.
 
-O console administrativo é responsável por criar e administrar usuários, consultar o Google Analytics 4 e configurar o estado público do produto. Ele usa Neon Auth para a sessão e o mesmo Neon Postgres do produto principal. A regra de autorização exige que a pessoa tenha papel `admin` em uma organização.
+O console administrativo é responsável por criar e administrar usuários, consultar o Google Analytics 4 e configurar o estado público do produto. Ele usa Neon Auth para a sessão e o mesmo Neon Postgres do produto principal. O acesso é global e independente de organização: somente as contas registradas em `public.site_admins` podem abrir o console.
 
 ## Publicação na Vercel
 
@@ -54,9 +54,13 @@ Essa migração cria apenas `public.admin_site_settings`, com modo de manutenç�
 ## Fluxo de acesso
 
 1. A pessoa abre o domínio administrativo e entra pelo Neon Auth.
-2. O portal resolve a organização vinculada à sessão.
-3. Apenas papel `admin` consegue abrir o console.
+2. O portal verifica a conta na tabela global `public.site_admins`.
+3. Apenas administradores globais conseguem abrir o console; não é necessário vínculo em `organization_members`.
 4. O administrador cria usuários com senha temporária e papel inicial.
 5. A conta criada pode entrar no produto principal, mas não tem acesso ao console administrativo.
 
 O cadastro público continua desativado. O administrador pode editar papel, trocar senha ou remover o vínculo de uma pessoa da organização. Remover não apaga a conta global do Neon Auth.
+
+### Primeiro administrador global
+
+Execute `neon/migrations/0015_site_admins.sql` no banco compartilhado. Depois, insira o `user_id` da conta Neon Auth em `public.site_admins`. A conta pode existir sem qualquer registro em `organization_members`; o portal usa a primeira organização cadastrada apenas como contexto operacional legado para as métricas e vínculos criados pelo console.

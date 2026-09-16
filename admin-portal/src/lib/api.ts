@@ -32,6 +32,7 @@ export type OrganizationContext = {
   email: string | null;
   organizationId: string;
   organization: { name: string; slug: string };
+  scope: 'global';
 };
 
 export async function getAuthenticatedClient() {
@@ -56,19 +57,33 @@ export async function getAuthenticatedClient() {
 export async function getAdminContext(): Promise<OrganizationContext | { response: Response }> {
   const { db, userId, email } = await getAuthenticatedClient();
   if (!userId) return { response: errorJson('É necessário estar autenticado.', 401) };
+
+  const admins = await db`
+    select user_id
+    from public.site_admins
+    where is_active = true
+      and (user_id = ${userId} or lower(email) = lower(coalesce(${email}, '')))
+    limit 1
+  ` as Array<{ user_id: string }>;
+  if (!admins[0]) return { response: errorJson('Apenas administradores globais podem abrir este console.', 403) };
+
   const memberships = await db`
-    select om.organization_id, o.name, o.slug
-    from public.organization_members om
-    join public.organizations o on o.id = om.organization_id
-    where om.user_id = ${userId}
-    order by om.created_at asc
+    select id as organization_id, name, slug
+    from public.organizations
+    order by created_at asc
     limit 1
   ` as Array<{ organization_id: string; name: string; slug: string }>;
   const membership = memberships[0];
-  if (!membership) return { response: errorJson('Seu usuário ainda não está associado a uma organização.', 403) };
-  const roles = await db`select role from public.organization_members where organization_id = ${membership.organization_id}::uuid and user_id = ${userId} limit 1` as Array<{ role: string }>;
-  if (roles[0]?.role !== 'admin') return { response: errorJson('Apenas administradores podem abrir este console.', 403) };
-  return { db, userId, email, organizationId: membership.organization_id, organization: { name: membership.name, slug: membership.slug } };
+  if (!membership) return { response: errorJson('Crie uma organização no Majurh antes de administrar o produto.', 503) };
+
+  return {
+    db,
+    userId,
+    email,
+    organizationId: membership.organization_id,
+    organization: { name: membership.name, slug: membership.slug },
+    scope: 'global',
+  };
 }
 
 export type MemberEmail = {

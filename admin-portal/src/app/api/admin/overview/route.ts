@@ -58,6 +58,7 @@ export async function GET() {
     return json({
       data: {
         organization: context.organization,
+        scope: context.scope,
         members,
         metrics: counts[0] ?? { members: 0, candidates: 0, processes: 0, pending_documents: 0 },
         site,
