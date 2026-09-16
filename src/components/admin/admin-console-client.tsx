@@ -1,7 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type AppRole = 'manager' | 'recruiter' | 'viewer';
 
@@ -41,6 +41,7 @@ export function AdminConsoleClient() {
   const [editRole, setEditRole] = useState<Member['role']>('recruiter');
   const [newMemberPassword, setNewMemberPassword] = useState('');
   const [memberSaving, setMemberSaving] = useState(false);
+  const memberDialogCloseRef = useRef<HTMLButtonElement>(null);
 
   async function loadUsers() {
     const response = await fetch('/api/admin/users', { cache: 'no-store' });
@@ -116,6 +117,16 @@ export function AdminConsoleClient() {
     setNewMemberPassword('');
     setError('');
   }
+
+  useEffect(() => {
+    if (!editingMember) return;
+    memberDialogCloseRef.current?.focus();
+    function handleDialogKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') setEditingMember(null);
+    }
+    window.addEventListener('keydown', handleDialogKey);
+    return () => window.removeEventListener('keydown', handleDialogKey);
+  }, [editingMember]);
 
   async function saveMember() {
     if (!editingMember) return;
@@ -220,7 +231,7 @@ export function AdminConsoleClient() {
 
         <section className="admin-console-card admin-console-members-card"><div className="admin-console-card-heading"><span className="admin-console-icon"><Icon name="users" /></span><div><p className="eyebrow">Equipe da organização</p><h2>Pessoas com acesso</h2><p>Contas vinculadas a {data?.organization.name || 'esta organização'}.</p></div><span className="admin-console-count">{data?.members.length ?? 0} acessos</span></div>{data?.members.length ? <div className="admin-console-member-list">{data.members.map((member) => <div className="admin-console-member" key={member.user_id}><span className="admin-console-avatar">{initials(member.full_name)}</span><span className="admin-console-member-copy"><strong>{member.full_name}</strong><small>{member.email || 'E-mail não disponível'}</small></span><span className={`admin-console-role admin-console-role-${member.role}`}>{roleLabel(member.role)}</span><button className="admin-console-member-action" type="button" onClick={() => openMemberEditor(member)}>{member.role === 'admin' ? 'Gerenciar' : 'Editar'} <Icon name="chevron-right" size={14} /></button></div>)}</div> : <div className="admin-console-empty"><Icon name="users" size={20} /><strong>Nenhum acesso encontrado</strong><p>Crie o primeiro usuário acima para começar.</p></div>}</section>
 
-        {editingMember && <div className="admin-member-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingMember(null); }}><section className="admin-member-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-member-dialog-title" onMouseDown={(event) => event.stopPropagation()}><header><div><p className="eyebrow">Gerenciar acesso</p><h2 id="admin-member-dialog-title">{editingMember.full_name}</h2><p>{editingMember.email || 'E-mail não disponível'}</p></div><button className="icon-button" type="button" onClick={() => setEditingMember(null)} aria-label="Fechar"><Icon name="x" size={17} /></button></header><div className="admin-member-dialog-body"><label className="admin-console-field"><span>Papel na organização</span><select className="form-select" value={editRole} onChange={(event) => setEditRole(event.target.value as Member['role'])}><option value="admin">Administrador</option><option value="manager">Gerente</option><option value="recruiter">Recrutador</option><option value="viewer">Visualizador</option></select></label><label className="admin-console-field"><span>Nova senha (opcional)</span><input className="form-input" type="password" value={newMemberPassword} onChange={(event) => setNewMemberPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} maxLength={128} autoComplete="new-password" /><small>Deixe em branco para manter a senha atual.</small></label></div><footer><button className="button button-danger" type="button" disabled={memberSaving || editingMember.role === 'admin' && admins <= 1} onClick={removeMember}>Remover acesso</button><span /><button className="button button-secondary" type="button" onClick={() => setEditingMember(null)}>Cancelar</button><button className="button button-primary" type="button" disabled={memberSaving} onClick={saveMember}>{memberSaving ? 'Salvando…' : 'Salvar alterações'}</button></footer></section></div>}
+        {editingMember && <div className="admin-member-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setEditingMember(null); }}><section className="admin-member-dialog" role="dialog" aria-modal="true" aria-labelledby="admin-member-dialog-title" onMouseDown={(event) => event.stopPropagation()}><header><div><p className="eyebrow">Gerenciar acesso</p><h2 id="admin-member-dialog-title">{editingMember.full_name}</h2><p>{editingMember.email || 'E-mail não disponível'}</p></div><button ref={memberDialogCloseRef} className="icon-button" type="button" onClick={() => setEditingMember(null)} aria-label="Fechar"><Icon name="x" size={17} /></button></header><div className="admin-member-dialog-body"><label className="admin-console-field"><span>Papel na organização</span><select className="form-select" value={editRole} onChange={(event) => setEditRole(event.target.value as Member['role'])}><option value="admin">Administrador</option><option value="manager">Gerente</option><option value="recruiter">Recrutador</option><option value="viewer">Visualizador</option></select></label><label className="admin-console-field"><span>Nova senha (opcional)</span><input className="form-input" type="password" value={newMemberPassword} onChange={(event) => setNewMemberPassword(event.target.value)} placeholder="Mínimo de 8 caracteres" minLength={8} maxLength={128} autoComplete="new-password" /><small>Deixe em branco para manter a senha atual.</small></label></div><footer><button className="button button-danger" type="button" disabled={memberSaving || editingMember.role === 'admin' && admins <= 1} onClick={removeMember}>Remover acesso</button><span /><button className="button button-secondary" type="button" onClick={() => setEditingMember(null)}>Cancelar</button><button className="button button-primary" type="button" disabled={memberSaving} onClick={saveMember}>{memberSaving ? 'Salvando…' : 'Salvar alterações'}</button></footer></section></div>}
 
         <footer className="admin-console-footer"><span>Majurh · administração isolada</span><span>Neon Auth + Neon Postgres</span></footer>
       </div>

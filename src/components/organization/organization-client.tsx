@@ -330,7 +330,7 @@ export function OrganizationClient() {
           </div>
           <div className="organization-pulse-reading">
             <div><h2 id="organization-pulse-title">{onlineCount} {onlineCount === 1 ? 'pessoa disponível' : 'pessoas disponíveis'}</h2><p>{members.length ? `${presenceRate}% da equipe está disponível para o próximo movimento.` : 'Adicione pessoas para acompanhar a disponibilidade do time.'}</p></div>
-            <div className="organization-presence-meter" role="progressbar" aria-label="Percentual da equipe online" aria-valuemin={0} aria-valuemax={100} aria-valuenow={presenceRate}><span style={{ width: `${presenceRate}%` }} /></div>
+            <div className="organization-presence-meter" role="progressbar" aria-label="Percentual da equipe online" aria-valuemin={0} aria-valuemax={100} aria-valuenow={presenceRate}><span style={{ transform: `scaleX(${presenceRate / 100})` }} /></div>
           </div>
           <div className="organization-pulse-stats">
             <div><span><i className="presence-dot presence-online" />Online</span><strong>{onlineCount}</strong></div>

@@ -48,6 +48,13 @@ type Idea = {
   rotation: number;
 };
 
+type ProductivityState = {
+  board: BoardCard[];
+  tasks: TodoTask[];
+  events: CalendarEvent[];
+  ideas: Idea[];
+};
+
 const tabs: Array<{ id: View; label: string; icon: 'layout-dashboard' | 'kanban' | 'list-checks' | 'clock' | 'calendar' | 'lightbulb' }> = [
   { id: 'overview', label: 'Visão geral', icon: 'layout-dashboard' },
   { id: 'kanban', label: 'Kanban', icon: 'kanban' },
@@ -68,8 +75,9 @@ const initialTasks: TodoTask[] = [];
 const initialEvents: CalendarEvent[] = [];
 const initialIdeas: Idea[] = [];
 
-// v2 começa sem os dados de demonstração da primeira versão do módulo.
-const storageKey = 'vieira-couto-productivity-v2';
+// A cópia local existe apenas como contingência quando a migração do Neon ainda
+// não foi aplicada. O estado oficial da equipe fica no workspace da organização.
+const storageKey = 'majurh:productivity:v3';
 
 export function ProductivityClient() {
   const [activeView, setActiveView] = useState<View>('overview');
@@ -78,6 +86,8 @@ export function ProductivityClient() {
   const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
   const [hydrated, setHydrated] = useState(false);
+  const [backendAvailable, setBackendAvailable] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [draggedCard, setDraggedCard] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
 
@@ -90,29 +100,116 @@ export function ProductivityClient() {
   const [newEvent, setNewEvent] = useState({ title: '', time: '10:00', date: formatLocalDate(new Date()) });
   const [taskFilter, setTaskFilter] = useState<'all' | 'today' | 'priority'>('all');
   const [calendarMode, setCalendarMode] = useState<'month' | 'week'>('month');
-  const { seconds: timerSeconds, running: timerRunning, task: timerTask, setTask: setTimerTask, toggle: toggleTimer, reset: resetTimer } = useTimeTracker();
+  const { seconds: timerSeconds, running: timerRunning, task: timerTask, sessions, setTask: setTimerTask, toggle: toggleTimer, reset: resetTimer } = useTimeTracker();
+  const saveTimerRef = useRef<number | null>(null);
+  const dirtyRef = useRef(false);
+  const applyingRemoteRef = useRef(false);
+  const latestRemoteUpdateRef = useRef<string | null>(null);
 
   useEffect(() => {
-    try {
-      const saved = window.localStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = JSON.parse(saved) as Partial<{ board: BoardCard[]; tasks: TodoTask[]; events: CalendarEvent[]; ideas: Idea[] }>;
-        if (Array.isArray(parsed.board)) setBoard(parsed.board);
-        if (Array.isArray(parsed.tasks)) setTasks(parsed.tasks);
-        if (Array.isArray(parsed.events)) setEvents(parsed.events);
-        if (Array.isArray(parsed.ideas)) setIdeas(parsed.ideas);
+    let active = true;
+
+    async function loadWorkspace() {
+      try {
+        const response = await fetch('/api/productivity', { cache: 'no-store' });
+        const payload = await response.json() as { data?: { state?: unknown; updatedAt?: string | null } };
+        const remote = payload.data?.state ? readProductivityState(payload.data.state) : null;
+        if (!response.ok || !remote) throw new Error('workspace-unavailable');
+        if (!active) return;
+        applyingRemoteRef.current = true;
+        setBoard(remote.board);
+        setTasks(remote.tasks);
+        setEvents(remote.events);
+        setIdeas(remote.ideas);
+        latestRemoteUpdateRef.current = payload.data?.updatedAt ?? null;
+        setBackendAvailable(true);
+      } catch {
+        // Enquanto a migração não chega ao Neon, a pessoa ainda consegue
+        // trabalhar localmente, com o estado explicitamente sinalizado na UI.
+        const local = readLocalProductivityState();
+        if (!active) return;
+        applyingRemoteRef.current = true;
+        setBoard(local.board);
+        setTasks(local.tasks);
+        setEvents(local.events);
+        setIdeas(local.ideas);
+        setBackendAvailable(false);
+      } finally {
+        if (active) setHydrated(true);
       }
-    } catch {
-      // Dados locais inválidos não devem impedir o uso da tela.
-    } finally {
-      setHydrated(true);
     }
+
+    void loadWorkspace();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(storageKey, JSON.stringify({ board, tasks, events, ideas }));
-  }, [board, tasks, events, ideas, hydrated]);
+    const state = { board, tasks, events, ideas } satisfies ProductivityState;
+    window.localStorage.setItem(storageKey, JSON.stringify(state));
+
+    if (applyingRemoteRef.current) {
+      applyingRemoteRef.current = false;
+      return;
+    }
+
+    dirtyRef.current = true;
+    if (!backendAvailable) return;
+    if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = window.setTimeout(() => { void persistWorkspace(state); }, 500);
+
+    async function persistWorkspace(nextState: ProductivityState) {
+      setSyncing(true);
+      try {
+        const response = await fetch('/api/productivity', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ state: nextState }),
+        });
+        const payload = await response.json() as { data?: { updatedAt?: string | null }; error?: string };
+        if (!response.ok) throw new Error(payload.error || 'Não foi possível sincronizar a produtividade.');
+        latestRemoteUpdateRef.current = payload.data?.updatedAt ?? null;
+        dirtyRef.current = false;
+      } catch {
+        setBackendAvailable(false);
+        setNotice('A produtividade ficou salva localmente. Execute a migração do Neon para sincronizar com a equipe.');
+      } finally {
+        setSyncing(false);
+      }
+    }
+
+    return () => {
+      if (saveTimerRef.current) window.clearTimeout(saveTimerRef.current);
+    };
+  }, [board, tasks, events, ideas, hydrated, backendAvailable]);
+
+  useEffect(() => {
+    if (!hydrated || !backendAvailable) return;
+    let active = true;
+
+    async function refreshWorkspace() {
+      if (dirtyRef.current) return;
+      try {
+        const response = await fetch('/api/productivity', { cache: 'no-store' });
+        const payload = await response.json() as { data?: { state?: unknown; updatedAt?: string | null } };
+        const remote = payload.data?.state ? readProductivityState(payload.data.state) : null;
+        if (!response.ok || !remote || !active) return;
+        const remoteUpdatedAt = payload.data?.updatedAt ?? null;
+        if (remoteUpdatedAt === latestRemoteUpdateRef.current) return;
+        applyingRemoteRef.current = true;
+        setBoard(remote.board);
+        setTasks(remote.tasks);
+        setEvents(remote.events);
+        setIdeas(remote.ideas);
+        latestRemoteUpdateRef.current = remoteUpdatedAt;
+      } catch {
+        // Uma falha transitória não interrompe o trabalho local.
+      }
+    }
+
+    const interval = window.setInterval(() => void refreshWorkspace(), 5000);
+    return () => { active = false; window.clearInterval(interval); };
+  }, [hydrated, backendAvailable]);
 
   useEffect(() => {
     if (!notice) return;
@@ -212,27 +309,27 @@ export function ProductivityClient() {
         </div>
         <div className="productivity-day-pulse" aria-label="Resumo do dia">
           <span className="pulse-orbit"><span /></span>
-          <div><span className="pulse-label">Pulso de hoje</span><strong>{completedTasks}/{tasks.length} tarefas concluídas</strong><small>{todayEvents} {todayEvents === 1 ? 'evento' : 'eventos'} na agenda</small></div>
+          <div><span className="pulse-label">Pulso de hoje</span><strong>{completedTasks}/{tasks.length} tarefas concluídas</strong><small>{todayEvents} {todayEvents === 1 ? 'evento' : 'eventos'} na agenda</small><small className="productivity-sync-status"><i className={backendAvailable ? 'is-connected' : ''} />{backendAvailable ? (syncing ? 'Sincronizando com a equipe…' : 'Sincronizado com a organização') : 'Modo local temporário'}</small></div>
         </div>
       </section>
 
-      <nav className="productivity-tabs" aria-label="Ferramentas de produtividade">
-        {tabs.map((tab) => <button key={tab.id} className={`productivity-tab ${activeView === tab.id ? 'is-active' : ''}`} onClick={() => setActiveView(tab.id)} aria-current={activeView === tab.id ? 'page' : undefined}><Icon name={tab.icon} size={16} /><span>{tab.label}</span></button>)}
+      <nav className="productivity-tabs" aria-label="Ferramentas de produtividade" role="tablist">
+        {tabs.map((tab) => <button key={tab.id} className={`productivity-tab ${activeView === tab.id ? 'is-active' : ''}`} onClick={() => setActiveView(tab.id)} role="tab" aria-selected={activeView === tab.id}><Icon name={tab.icon} size={16} /><span>{tab.label}</span></button>)}
       </nav>
 
       {notice && <div className="productivity-notice" role="status"><Icon name="check-circle" size={16} /><span>{notice}</span><button className="icon-button" onClick={() => setNotice('')} aria-label="Fechar aviso"><Icon name="x" size={15} /></button></div>}
 
-      {activeView === 'overview' && <Overview onNavigate={setActiveView} focusMinutes={focusMinutes} board={board} tasks={tasks} events={events} ideas={ideas} />}
+      {activeView === 'overview' && <Overview onNavigate={setActiveView} focusMinutes={focusMinutes} board={board} tasks={tasks} events={events} ideas={ideas} backendAvailable={backendAvailable} />}
       {activeView === 'kanban' && <KanbanView board={board} draggedCard={draggedCard} newCardTitle={newCardTitle} onNewCardTitleChange={setNewCardTitle} onAddCard={addCard} onDragStart={setDraggedCard} onDrop={moveCard} />}
       {activeView === 'tasks' && <TasksView tasks={visibleTasks} allTasks={tasks} filter={taskFilter} newTaskTitle={newTaskTitle} onNewTaskTitleChange={setNewTaskTitle} onAddTask={addTask} onFilterChange={setTaskFilter} onToggle={(id) => setTasks((current) => current.map((task) => task.id === id ? { ...task, done: !task.done } : task))} />}
-      {activeView === 'tracker' && <TrackerView seconds={timerSeconds} running={timerRunning} task={timerTask} focusMinutes={focusMinutes} sessions={0} tasks={tasks} onTaskChange={setTimerTask} onToggle={toggleTimer} onReset={resetTimer} />}
+      {activeView === 'tracker' && <TrackerView seconds={timerSeconds} running={timerRunning} task={timerTask} focusMinutes={focusMinutes} sessions={sessions} tasks={tasks} onTaskChange={setTimerTask} onToggle={toggleTimer} onReset={resetTimer} />}
       {activeView === 'calendar' && <CalendarView mode={calendarMode} month={viewMonth} cells={calendarCells} selectedDay={selectedDay} selectedEvents={selectedEvents} events={events} newEvent={newEvent} onModeChange={setCalendarMode} onMonthChange={(offset) => setViewMonth((current) => calendarMode === 'week' ? new Date(current.getTime() + offset * 7 * 86400000) : new Date(current.getFullYear(), current.getMonth() + offset, 1))} onSelectDay={setSelectedDay} onNewEventChange={setNewEvent} onAddEvent={addEvent} onConnect={connectCalendar} />}
       {activeView === 'brainstorm' && <BrainstormView ideas={ideas} newIdeaTitle={newIdeaTitle} newIdeaBody={newIdeaBody} onNewIdeaTitleChange={setNewIdeaTitle} onNewIdeaBodyChange={setNewIdeaBody} onAddIdea={addIdea} onMoveIdea={moveIdea} onAddImage={addImage} onAddFrame={addFrame} onRemoveIdea={removeIdea} onImageError={() => setNotice('Escolha uma imagem de até 1,5 MB.')} />}
     </div>
   );
 }
 
-function Overview({ onNavigate, focusMinutes, board, tasks, events, ideas }: { onNavigate: (view: View) => void; focusMinutes: number; board: BoardCard[]; tasks: TodoTask[]; events: CalendarEvent[]; ideas: Idea[] }) {
+function Overview({ onNavigate, focusMinutes, board, tasks, events, ideas, backendAvailable }: { onNavigate: (view: View) => void; focusMinutes: number; board: BoardCard[]; tasks: TodoTask[]; events: CalendarEvent[]; ideas: Idea[]; backendAvailable: boolean }) {
   const nextTask = tasks.find((task) => !task.done);
   const nextEvent = [...events].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`))[0];
   return <div className="productivity-overview">
@@ -245,7 +342,7 @@ function Overview({ onNavigate, focusMinutes, board, tasks, events, ideas }: { o
       <section className="productivity-summary-card"><div className="section-title-row"><div><p className="eyebrow">Agora</p><h2>O que pede atenção</h2></div><Icon name="activity" size={20} /></div><div className="attention-list"><button onClick={() => onNavigate('tasks')}><span className="attention-dot dot-amber" /><span><strong>{nextTask?.title ?? 'Nenhuma tarefa pendente'}</strong><small>{nextTask ? 'Próxima tarefa · ' + nextTask.due : 'Você está em dia'}</small></span><Icon name="chevron-right" size={16} /></button><button onClick={() => onNavigate('calendar')}><span className="attention-dot dot-blue" /><span><strong>{nextEvent?.title ?? 'Agenda livre'}</strong><small>{nextEvent ? `${formatCalendarDate(nextEvent.date)} · ${nextEvent.time}` : 'Adicione um compromisso'}</small></span><Icon name="chevron-right" size={16} /></button><button onClick={() => onNavigate('brainstorm')}><span className="attention-dot dot-lilac" /><span><strong>{ideas.length} ideias no quadro</strong><small>Continue dando forma ao que vem depois</small></span><Icon name="chevron-right" size={16} /></button></div></section>
     </div>
     <div className="productivity-shortcuts"><ShortcutCard icon="kanban" label="Kanban" value={`${board.filter((card) => card.column !== 'done').length} cards ativos`} detail="Veja o fluxo de trabalho" onClick={() => onNavigate('kanban')} /><ShortcutCard icon="list-checks" label="TO-DO" value={`${tasks.filter((task) => !task.done).length} pendências`} detail="Limpe sua lista" onClick={() => onNavigate('tasks')} /><ShortcutCard icon="calendar" label="Calendário" value={`${events.length} compromissos`} detail="Planeje a semana" onClick={() => onNavigate('calendar')} /><ShortcutCard icon="lightbulb" label="Brainstorm" value={`${ideas.length} ideias`} detail="Abra o quadro" onClick={() => onNavigate('brainstorm')} /></div>
-    <section className="productivity-principle"><span className="principle-mark">VC</span><div><p className="eyebrow">Um jeito melhor de trabalhar</p><h2>Clareza para a próxima ação. Espaço para pensar.</h2><p>Use o Kanban para o fluxo, o TO-DO para o dia, o timer para o foco e o quadro para o que ainda está nascendo.</p></div><button className="button button-secondary" onClick={() => onNavigate('kanban')}>Começar pelo fluxo <Icon name="arrow-up-right" size={15} /></button></section>
+    <section className="productivity-principle"><span className="principle-mark">VC</span><div><p className="eyebrow">Um jeito melhor de trabalhar</p><h2>Clareza para a próxima ação. Espaço para pensar.</h2><p>Use o Kanban para o fluxo, o TO-DO para o dia, o timer para o foco e o quadro para o que ainda está nascendo.</p><small className="productivity-storage-note"><Icon name={backendAvailable ? 'check-circle' : 'activity'} size={13} />{backendAvailable ? 'Alterações visíveis para toda a organização.' : 'Aguardando a migração 0013 do Neon para compartilhar com a equipe.'}</small></div><button className="button button-secondary" onClick={() => onNavigate('kanban')}>Começar pelo fluxo <Icon name="arrow-up-right" size={15} /></button></section>
   </div>;
 }
 
@@ -259,7 +356,8 @@ function KanbanView({ board, draggedCard, newCardTitle, onNewCardTitleChange, on
 
 function TasksView({ tasks, allTasks, filter, newTaskTitle, onNewTaskTitleChange, onAddTask, onFilterChange, onToggle }: { tasks: TodoTask[]; allTasks: TodoTask[]; filter: 'all' | 'today' | 'priority'; newTaskTitle: string; onNewTaskTitleChange: (value: string) => void; onAddTask: (event: FormEvent<HTMLFormElement>) => void; onFilterChange: (filter: 'all' | 'today' | 'priority') => void; onToggle: (id: string) => void }) {
   const completed = allTasks.filter((task) => task.done).length;
-  return <div className="productivity-view"><ViewHeading eyebrow="Dia em movimento" title="TO-DO sem ruído" text="Uma lista curta, com prioridade clara e espaço para concluir." action={<form className="quick-add-form" onSubmit={onAddTask}><input value={newTaskTitle} onChange={(event) => onNewTaskTitleChange(event.target.value)} placeholder="Qual é a próxima ação?" aria-label="Nome da nova tarefa" /><button className="button button-primary" type="submit"><Icon name="plus" size={15} />Adicionar</button></form>} /><div className="tasks-layout"><section className="panel task-panel"><div className="task-panel-header"><div><span className="task-progress-label">Progresso de hoje</span><strong>{completed} de {allTasks.length} concluídas</strong></div><div className="progress-track"><span style={{ width: `${allTasks.length ? (completed / allTasks.length) * 100 : 0}%` }} /></div></div><div className="task-filters" role="tablist" aria-label="Filtrar tarefas">{([['all', 'Todas'], ['today', 'Hoje'], ['priority', 'Prioridade alta']] as const).map(([id, label]) => <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => onFilterChange(id)} role="tab" aria-selected={filter === id}>{label}</button>)}</div><div className="todo-list">{tasks.length ? tasks.map((task) => <label className={`todo-row ${task.done ? 'is-done' : ''}`} key={task.id}><input type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} /><span className="todo-check"><Icon name="check" size={14} /></span><span className="todo-copy"><strong>{task.title}</strong><small>{task.due}</small></span><span className={`priority-pill priority-pill-${task.priority}`}>{priorityLabel(task.priority)}</span></label>) : <div className="empty-state"><strong>Nenhuma tarefa neste filtro</strong><p>Adicione uma ação ou mude o filtro.</p></div>}</div></section><aside className="panel task-side-panel"><div className="side-illustration"><span>0</span><span>min</span></div><p className="eyebrow">Regra de ouro</p><h2>Faça a próxima coisa certa.</h2><p>Escolha uma tarefa que caiba no seu foco atual. O restante pode esperar no Kanban.</p><button className="button button-secondary" onClick={() => onFilterChange('today')}>Ver só hoje <Icon name="arrow-up-right" size={15} /></button></aside></div></div>;
+  const progress = allTasks.length ? completed / allTasks.length : 0;
+  return <div className="productivity-view"><ViewHeading eyebrow="Dia em movimento" title="TO-DO sem ruído" text="Uma lista curta, com prioridade clara e espaço para concluir." action={<form className="quick-add-form" onSubmit={onAddTask}><input value={newTaskTitle} onChange={(event) => onNewTaskTitleChange(event.target.value)} placeholder="Qual é a próxima ação?" aria-label="Nome da nova tarefa" /><button className="button button-primary" type="submit"><Icon name="plus" size={15} />Adicionar</button></form>} /><div className="tasks-layout"><section className="panel task-panel"><div className="task-panel-header"><div><span className="task-progress-label">Progresso de hoje</span><strong>{completed} de {allTasks.length} concluídas</strong></div><div className="progress-track" role="progressbar" aria-label="Progresso das tarefas de hoje" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100)}><span style={{ transform: `scaleX(${progress})` }} /></div></div><div className="task-filters" role="tablist" aria-label="Filtrar tarefas">{([['all', 'Todas'], ['today', 'Hoje'], ['priority', 'Prioridade alta']] as const).map(([id, label]) => <button key={id} className={filter === id ? 'is-active' : ''} onClick={() => onFilterChange(id)} role="tab" aria-selected={filter === id}>{label}</button>)}</div><div className="todo-list">{tasks.length ? tasks.map((task) => <label className={`todo-row ${task.done ? 'is-done' : ''}`} key={task.id}><input type="checkbox" checked={task.done} onChange={() => onToggle(task.id)} /><span className="todo-check"><Icon name="check" size={14} /></span><span className="todo-copy"><strong>{task.title}</strong><small>{task.due}</small></span><span className={`priority-pill priority-pill-${task.priority}`}>{priorityLabel(task.priority)}</span></label>) : <div className="empty-state"><strong>Nenhuma tarefa neste filtro</strong><p>Adicione uma ação ou mude o filtro.</p></div>}</div></section><aside className="panel task-side-panel"><div className="side-illustration"><span>0</span><span>min</span></div><p className="eyebrow">Regra de ouro</p><h2>Faça a próxima coisa certa.</h2><p>Escolha uma tarefa que caiba no seu foco atual. O restante pode esperar no Kanban.</p><button className="button button-secondary" onClick={() => onFilterChange('today')}>Ver só hoje <Icon name="arrow-up-right" size={15} /></button></aside></div></div>;
 }
 
 function TrackerView({ seconds, running, task, focusMinutes, sessions, tasks, onTaskChange, onToggle, onReset }: { seconds: number; running: boolean; task: string; focusMinutes: number; sessions: number; tasks: TodoTask[]; onTaskChange: (value: string) => void; onToggle: () => void; onReset: () => void }) {
@@ -303,6 +401,40 @@ function BrainstormView({ ideas, newIdeaTitle, newIdeaBody, onNewIdeaTitleChange
     window.addEventListener('keydown', handleKey);
     return () => { window.removeEventListener('pointerdown', closeMenu); window.removeEventListener('keydown', handleKey); };
   }, [contextMenu]);
+
+  useEffect(() => {
+    function handleIdeaKeyboard(event: KeyboardEvent) {
+      const focused = document.activeElement;
+      if (!(focused instanceof HTMLElement) || !focused.classList.contains('idea-note')) return;
+      const index = Array.from(canvasRef.current?.querySelectorAll('.idea-note') ?? []).indexOf(focused);
+      const idea = ideas[index];
+      if (!idea) return;
+
+      if (event.key === 'Delete' || event.key === 'Backspace') {
+        event.preventDefault();
+        onRemoveIdea(idea.id);
+        return;
+      }
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        const bounds = canvasRef.current?.getBoundingClientRect();
+        const rect = focused.getBoundingClientRect();
+        if (bounds) setContextMenu({ x: clamp(rect.left - bounds.left + 12, 8, Math.max(8, bounds.width - 202)), y: clamp(rect.top - bounds.top + 12, 8, Math.max(8, bounds.height - 190)), targetId: idea.id });
+        return;
+      }
+      if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) return;
+      event.preventDefault();
+      const step = event.shiftKey ? 24 : 8;
+      const bounds = canvasRef.current?.getBoundingClientRect();
+      if (!bounds) return;
+      const nextX = clamp(idea.x + (event.key === 'ArrowLeft' ? -step : event.key === 'ArrowRight' ? step : 0), 14, Math.max(14, bounds.width - 238));
+      const nextY = clamp(idea.y + (event.key === 'ArrowUp' ? -step : event.key === 'ArrowDown' ? step : 0), 14, Math.max(14, bounds.height - 174));
+      onMoveIdea(idea.id, nextX, nextY);
+    }
+
+    window.addEventListener('keydown', handleIdeaKeyboard);
+    return () => window.removeEventListener('keydown', handleIdeaKeyboard);
+  }, [ideas, onMoveIdea, onRemoveIdea]);
 
   function beginDrag(event: React.PointerEvent<HTMLElement>, idea: Idea) {
     const canvas = canvasRef.current;
@@ -386,6 +518,26 @@ function buildWeekCells(dateValue: string): CalendarCell[] {
 }
 
 function makeId(prefix: string) { return `${prefix}-${Math.random().toString(36).slice(2, 9)}`; }
+function readProductivityState(value: unknown): ProductivityState | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  if (!Array.isArray(record.board) || !Array.isArray(record.tasks) || !Array.isArray(record.events) || !Array.isArray(record.ideas)) return null;
+  return {
+    board: record.board as BoardCard[],
+    tasks: record.tasks as TodoTask[],
+    events: record.events as CalendarEvent[],
+    ideas: record.ideas as Idea[],
+  };
+}
+function readLocalProductivityState(): ProductivityState {
+  try {
+    const saved = window.localStorage.getItem(storageKey);
+    const parsed = saved ? readProductivityState(JSON.parse(saved)) : null;
+    return parsed ?? { board: initialBoard, tasks: initialTasks, events: initialEvents, ideas: initialIdeas };
+  } catch {
+    return { board: initialBoard, tasks: initialTasks, events: initialEvents, ideas: initialIdeas };
+  }
+}
 function formatLocalDate(date: Date) { const year = date.getFullYear(); const month = `${date.getMonth() + 1}`.padStart(2, '0'); const day = `${date.getDate()}`.padStart(2, '0'); return `${year}-${month}-${day}`; }
 function formatCalendarDate(value: string) { return new Intl.DateTimeFormat('pt-BR', { weekday: 'short', day: '2-digit', month: 'short' }).format(new Date(`${value}T12:00:00`)).replace('.', ''); }
 function formatDuration(seconds: number) { const hours = Math.floor(seconds / 3600); const minutes = Math.floor((seconds % 3600) / 60); const remaining = seconds % 60; return `${hours ? `${hours.toString().padStart(2, '0')}:` : ''}${minutes.toString().padStart(2, '0')}:${remaining.toString().padStart(2, '0')}`; }

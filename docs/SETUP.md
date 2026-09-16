@@ -140,9 +140,9 @@ Sem essas variáveis, `/api/health` retorna `503` e as rotas internas exibem uma
 
 ## Produtividade
 
-O workspace também possui a área `/produtividade`, com Kanban, TO-DO, time tracker, calendário mensal e um canvas de brainstorm livre no estilo Miro. No canvas, o botão direito abre ações rápidas para criar nota, inserir imagem local de até 1,5 MB, adicionar moldura ou excluir o item selecionado. Nesta entrega, o módulo começa zerado e funciona localmente, salvando cards, tarefas, compromissos e notas no armazenamento do navegador. Isso permite testar a experiência sem criar registros compartilhados no banco.
+O workspace também possui a área `/produtividade`, com Kanban, TO-DO, time tracker, calendário mensal/semanal e um canvas de brainstorm livre no estilo Miro. No canvas, o botão direito abre ações rápidas para criar nota, inserir imagem local de até 1,5 MB, adicionar moldura ou excluir o item selecionado; quando uma nota recebe foco, `Enter` abre as ações, `Delete` remove e as setas movem o item (com `Shift`, em passos maiores). O estado do Kanban, tarefas, compromissos e notas fica na tabela `public.productivity_workspaces`, um registro por organização, e é atualizado para as outras sessões por polling de cinco segundos. A migração `neon/migrations/0013_productivity_workspace.sql` precisa ser aplicada antes do uso compartilhado. Se ela ainda não estiver no Neon, a interface cai para uma cópia local temporária e sinaliza isso na tela, sem fingir que a equipe está sincronizada.
 
-Os botões de Google Calendar e Outlook estão visíveis como preparação de integração. Para ativá-los em produção será necessário configurar OAuth no servidor, armazenar tokens com segurança por organização e implementar sincronização incremental. Não coloque client secrets nem tokens de calendário em variáveis `NEXT_PUBLIC_` ou no navegador.
+Os botões de Google Calendar e Outlook permanecem visíveis como preparação de integração, mas desativados até o OAuth existir no servidor. Para ativá-los em produção será necessário configurar OAuth no servidor, armazenar tokens com segurança por organização e implementar sincronização incremental. Não coloque client secrets nem tokens de calendário em variáveis `NEXT_PUBLIC_` ou no navegador.
 
 ### Referência visual
 

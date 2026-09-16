@@ -7,6 +7,7 @@ type TrackerContextValue = {
   seconds: number;
   running: boolean;
   task: string;
+  sessions: number;
   setTask: (task: string) => void;
   toggle: () => void;
   reset: () => void;
@@ -20,16 +21,18 @@ export function TimeTrackerProvider({ children }: { children: React.ReactNode })
   const [seconds, setSeconds] = useState(0);
   const [running, setRunning] = useState(false);
   const [task, setTask] = useState('');
+  const [sessions, setSessions] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem(trackerStateKey);
       if (saved) {
-        const parsed = JSON.parse(saved) as { seconds?: number; running?: boolean; task?: string };
+        const parsed = JSON.parse(saved) as { seconds?: number; running?: boolean; task?: string; sessions?: number };
         if (typeof parsed.seconds === 'number') setSeconds(Math.max(0, parsed.seconds));
         if (typeof parsed.running === 'boolean') setRunning(parsed.running);
         if (typeof parsed.task === 'string') setTask(parsed.task);
+        if (typeof parsed.sessions === 'number') setSessions(Math.max(0, Math.floor(parsed.sessions)));
       }
     } catch {
       // Estado local inválido não impede o restante do app de abrir.
@@ -46,20 +49,28 @@ export function TimeTrackerProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!hydrated) return;
-    window.localStorage.setItem(trackerStateKey, JSON.stringify({ seconds, running, task }));
+    window.localStorage.setItem(trackerStateKey, JSON.stringify({ seconds, running, task, sessions }));
     if (running) window.localStorage.setItem(trackerActiveKey, 'true');
     else window.localStorage.removeItem(trackerActiveKey);
     window.dispatchEvent(new Event('presence:context-changed'));
-  }, [seconds, running, task, hydrated]);
+  }, [seconds, running, task, sessions, hydrated]);
+
+  function toggleTracker() {
+    setRunning((current) => {
+      if (!current) setSessions((count) => count + 1);
+      return !current;
+    });
+  }
 
   const value = useMemo<TrackerContextValue>(() => ({
     seconds,
     running,
     task,
+    sessions,
     setTask,
-    toggle: () => setRunning((current) => !current),
+    toggle: toggleTracker,
     reset: () => { setRunning(false); setSeconds(0); },
-  }), [seconds, running, task]);
+  }), [seconds, running, task, sessions]);
 
   return (
     <TrackerContext.Provider value={value}>
