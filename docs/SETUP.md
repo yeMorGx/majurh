@@ -69,7 +69,7 @@ As consultas são executadas exclusivamente no servidor e cada rota valida o ví
 
 `/empresas` é o cadastro de apoio da organização. A empresa pode receber uma logo por upload de arquivo PNG, JPG, WEBP ou SVG de até 5 MB; a imagem é armazenada no Blob privado e pode ser adicionada ou trocada diretamente na listagem. A empresa pode ser ativada ou inativada e depois selecionada em `/vagas`. Cada vaga registra o cargo, a empresa contratante, a unidade, o departamento e a quantidade de posições abertas; essa quantidade também aparece ao iniciar um processo seletivo.
 
-No cadastro de candidato, o tipo de identidade pode ser RG ou CIN. O componente de escaneamento aceita uma imagem local ou a câmera do dispositivo, executa OCR no navegador para sugerir nome, CPF, número de identidade e nascimento e só envia o arquivo para o bucket privado quando o cadastro é salvo. A leitura é uma sugestão: o RH deve revisar os campos antes de confirmar.
+No cadastro de candidato, o tipo de identidade pode ser RG ou CIN. O componente de escaneamento aceita PDF, JPG ou PNG local, além da câmera do dispositivo. PDFs têm até 8 páginas rasterizadas localmente pelo PDF.js antes do OCR no navegador; o fluxo sugere nome, CPF, número de identidade e nascimento e só envia o arquivo original para o bucket privado quando o cadastro é salvo. A leitura é uma sugestão: o RH deve revisar os campos antes de confirmar.
 
 ## Neon Auth
 

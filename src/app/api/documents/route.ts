@@ -41,7 +41,8 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file');
     if (!(file instanceof File)) return errorJson('Envie um arquivo no campo file.', 400);
     if (file.size <= 0 || file.size > MAX_DOCUMENT_SIZE_BYTES) return errorJson('O arquivo deve ter entre 1 byte e 6 MB.', 400);
-    if (!allowedMimeTypes.has(file.type)) return errorJson('O arquivo deve ser PDF, JPG ou PNG.', 400);
+    const mimeType = file.name.toLowerCase().endsWith('.pdf') ? 'application/pdf' : file.type;
+    if (!allowedMimeTypes.has(mimeType)) return errorJson('O arquivo deve ser PDF, JPG ou PNG.', 400);
     const { db, userId } = await getAuthenticatedClient();
     if (!userId) return errorJson('É necessário estar autenticado.', 401);
     const role = await getOrganizationRole(db, userId, organizationId);
@@ -49,8 +50,8 @@ export async function POST(request: NextRequest) {
     const payload = parseDocumentUploadPayload({ candidate_id: formData.get('candidate_id'), process_id: formData.get('process_id'), document_type: formData.get('document_type') });
     if (!payload.ok) return json({ error: 'Dados do documento inválidos.', fields: payload.errors }, 400);
     const documentId = crypto.randomUUID();
-    storagePath = [organizationId, payload.data.candidate_id, payload.data.process_id ?? 'candidate', `${documentId}.${extensionForMimeType(file.type)}`].join('/');
-    await put(storagePath, file, { access: 'private', contentType: file.type, addRandomSuffix: false });
+    storagePath = [organizationId, payload.data.candidate_id, payload.data.process_id ?? 'candidate', `${documentId}.${extensionForMimeType(mimeType)}`].join('/');
+    await put(storagePath, file, { access: 'private', contentType: mimeType, addRandomSuffix: false });
     const rows = await db`
       insert into public.candidate_documents (
         id, organization_id, candidate_id, process_id, document_type, status, storage_path,
@@ -58,7 +59,7 @@ export async function POST(request: NextRequest) {
       ) values (
         ${documentId}, ${organizationId}, ${payload.data.candidate_id}, ${payload.data.process_id ?? null},
         ${payload.data.document_type}, 'uploaded', ${storagePath}, ${file.name.slice(0, 255)},
-        ${file.type}, ${file.size}, ${userId}
+        ${mimeType}, ${file.size}, ${userId}
       ) returning ${db.unsafe(documentSelect)}
     `;
     return json({ data: rows[0] }, 201);
