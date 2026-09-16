@@ -1,6 +1,7 @@
 'use client';
 
 import { Icon } from '@/components/ui/icon';
+import { AvatarGroup, AvatarGroupTooltip } from '@/components/ui/avatar-group';
 import { getBrandStyle, getOrganizationAssetUrl, normalizeHex, platformBrand, type OrganizationBrand } from '@/lib/branding';
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
@@ -341,7 +342,7 @@ export function OrganizationClient() {
         </div>
         <aside className="organization-pulse-side">
           <div className="organization-pulse-side-heading"><span>Quem está aqui</span><span className="organization-pulse-side-count">{onlineCount} agora</span></div>
-          {visibleMembers.length ? <div className="organization-pulse-avatars" aria-label="Pessoas presentes">{visibleMembers.map((member) => <span key={member.user_id} className={`organization-pulse-avatar pulse-avatar-${member.presence_status}`} title={`${member.full_name} · ${presenceMeta[member.presence_status].label}`}>{initials(member.full_name, member.email)}</span>)}</div> : <div className="organization-pulse-empty"><Icon name="users" size={20} /><span>Ninguém presente ainda.</span></div>}
+          {visibleMembers.length ? <AvatarGroup className="organization-pulse-avatars" aria-label="Pessoas presentes">{visibleMembers.map((member) => <div key={member.user_id} className={`organization-pulse-avatar pulse-avatar-${member.presence_status}`} aria-label={`${member.full_name} · ${presenceMeta[member.presence_status].label}`}><span>{initials(member.full_name, member.email)}</span><i className={`presence-dot presence-${member.presence_status}`} /><AvatarGroupTooltip><strong>{member.full_name}</strong><small>{presenceMeta[member.presence_status].label}{member.presence_context ? ` · ${member.presence_context}` : ''}</small></AvatarGroupTooltip></div>)}</AvatarGroup> : <div className="organization-pulse-empty"><Icon name="users" size={20} /><span>Ninguém presente ainda.</span></div>}
           <p>O status considera a atividade recente, o time tracker e compromissos em andamento.</p>
           <a className="organization-pulse-link" href="#organization-members-section">Ver pessoas e status <Icon name="chevron-down" size={14} /></a>
         </aside>
