@@ -22,19 +22,20 @@ export async function POST(request: NextRequest) {
       return errorJson('O nome deve ter entre 2 e 120 caracteres.', 400);
     }
 
-    const { db, userId, email } = await getAuthenticatedClient();
+    const { db, userId, authUserId, email } = await getAuthenticatedClient();
     if (!userId) {
       return errorJson('É necessário estar autenticado.', 401);
     }
+    const profileUserId = authUserId ?? userId;
 
     const rows = await db`
       insert into public.profiles (id, full_name)
-      values (${userId}, ${fullName})
+      values (${profileUserId}, ${fullName})
       on conflict (id) do update set full_name = excluded.full_name
       returning id, full_name, avatar_url
     `;
 
-    return json({ data: { profile: rows[0], user: { id: userId, email } } });
+    return json({ data: { profile: rows[0], user: { id: profileUserId, email } } });
   } catch (error) {
     return databaseErrorResponse(error);
   }

@@ -65,11 +65,27 @@ export async function POST(
     const validation = validateInvitation(invite);
     if (validation) return validation;
 
-    const { db, userId, email } = await getAuthenticatedClient();
+    const { db, userId, authUserId, email } = await getAuthenticatedClient();
     if (!userId || !email) return errorJson('Entre ou crie sua conta pelo convite antes de continuar.', 401);
     if (email.trim().toLowerCase() !== invite.email.trim().toLowerCase()) {
       return errorJson('Este convite foi enviado para outro e-mail.', 403);
     }
+
+    // O vínculo deve usar o ID atual do Neon Auth. O ID legado fica apenas
+    // como fallback para usuários migrados que ainda não possuem identidade local.
+    const membershipUserId = authUserId ?? userId;
+
+    await db`
+      insert into public.profiles (id, full_name)
+      values (${membershipUserId}, ${fullName})
+      on conflict (id) do update set full_name = excluded.full_name
+    `;
+    await db`
+      insert into public.organization_members (organization_id, user_id, email, role)
+      values (${invite.organization_id}::uuid, ${membershipUserId}, ${email.toLowerCase()}, ${invite.role}::public.app_role)
+      on conflict (organization_id, user_id) do update
+        set email = excluded.email, role = excluded.role
+    `;
 
     const claimed = await db`
       update public.organization_invitations
@@ -78,18 +94,6 @@ export async function POST(
       returning id
     `;
     if (!claimed.length) return errorJson('Este convite já foi utilizado ou expirou.', 409);
-
-    await db`
-      insert into public.profiles (id, full_name)
-      values (${userId}, ${fullName})
-      on conflict (id) do update set full_name = excluded.full_name
-    `;
-    await db`
-      insert into public.organization_members (organization_id, user_id, email, role)
-      values (${invite.organization_id}::uuid, ${userId}, ${email.toLowerCase()}, ${invite.role}::public.app_role)
-      on conflict (organization_id, user_id) do update
-        set email = excluded.email, role = excluded.role
-    `;
 
     return json({
       data: {

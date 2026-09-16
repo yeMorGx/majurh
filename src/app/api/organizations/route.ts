@@ -25,8 +25,9 @@ export async function POST(request: NextRequest) {
       return errorJson('O nome da organização deve ter entre 2 e 120 caracteres.', 400);
     }
 
-    const { db, userId, email } = await getAuthenticatedClient();
+    const { db, userId, authUserId, email } = await getAuthenticatedClient();
     if (!userId) return errorJson('É necessário estar autenticado.', 401);
+    const ownerUserId = authUserId ?? userId;
 
     const memberships = await db`
       select o.id, o.name, o.slug, om.role
@@ -66,7 +67,7 @@ export async function POST(request: NextRequest) {
     try {
       await db`
         insert into public.organization_members (organization_id, user_id, email, role)
-        values (${organization.id}::uuid, ${userId}, ${email}, 'admin'::public.app_role)
+        values (${organization.id}::uuid, ${ownerUserId}, ${email}, 'admin'::public.app_role)
       `;
     } catch (error) {
       // Não deixa uma organização vazia se o vínculo inicial falhar.
