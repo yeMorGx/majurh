@@ -13,6 +13,8 @@ Majurh é a marca principal da plataforma. Administradores podem abrir **Organiz
 
 A composição padrão da tela usa os assets `public/brand/majurh-dog-mark.svg` e `public/brand/majurh-login-art.png`, com paleta vinho, vermelho queimado, coral, creme e dourado inspirada na arte. Os campos permanecem inputs reais com labels e placeholders orientativos; o controle circular da senha alterna sua visibilidade. Abaixo do acesso há quatro botões com logos locais de Google, Microsoft, Sólides e LinkedIn, atualmente desativados até os respectivos fluxos de autenticação serem implementados. A organização pode substituir logo e banner somente por upload de arquivo, sem URL de imagem editável.
 
+Alterações de nome, cores, textos, logo e banner são propagadas imediatamente para outras abas por `BroadcastChannel`. Em outros dispositivos ou sessões, o shell autenticado, a página de organização e a tela de login consultam o estado publicado no Neon a cada cinco segundos; a mudança aparece sem recarregar a página.
+
 O ambiente autenticado segue Material Design 3 como sistema de composição: navigation drawer lateral com seleção tonal, top app bar com busca, superfícies em camadas, contornos semânticos, botões por nível de ênfase, campos com foco visível e estados de loading/empty/error/success/disabled. A identidade Majurh permanece nos papéis de cor e na trilha de processo; não é uma cópia literal da paleta do Material.
 
 A página **Organização** usa a mesma base como um brand studio: o hero apresenta o tenant, o formulário é dividido em identidade, papéis de cor e experiência de entrada, e a coluna lateral mostra uma prévia de login com janela, status ao vivo e confirmação da publicação. A alteração de logo e banner continua limitada a upload de arquivo, nunca URL.

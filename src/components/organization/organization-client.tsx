@@ -2,7 +2,7 @@
 
 import { Icon } from '@/components/ui/icon';
 import { getBrandStyle, getOrganizationAssetUrl, normalizeHex, platformBrand, type OrganizationBrand } from '@/lib/branding';
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
 
 type FormState = {
   name: string;
@@ -15,6 +15,15 @@ type FormState = {
 
 const emptyForm: FormState = { name: '', primaryColor: '', accentColor: '', kicker: '', headline: '', description: '' };
 
+function publishOrganizationUpdate(organization: OrganizationBrand) {
+  window.dispatchEvent(new CustomEvent<OrganizationBrand>('organization:updated', { detail: organization }));
+  if ('BroadcastChannel' in window) {
+    const channel = new BroadcastChannel('majurh:organization-updated');
+    channel.postMessage(organization);
+    channel.close();
+  }
+}
+
 export function OrganizationClient() {
   const [organization, setOrganization] = useState<OrganizationBrand | null>(null);
   const [role, setRole] = useState('');
@@ -25,6 +34,16 @@ export function OrganizationClient() {
   const [uploadingAsset, setUploadingAsset] = useState<'logo' | 'login-banner' | ''>('');
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+  const organizationRef = useRef<OrganizationBrand | null>(null);
+  const formRef = useRef<FormState>(emptyForm);
+
+  useEffect(() => {
+    organizationRef.current = organization;
+  }, [organization]);
+
+  useEffect(() => {
+    formRef.current = form;
+  }, [form]);
 
   useEffect(() => {
     let active = true;
@@ -44,6 +63,56 @@ export function OrganizationClient() {
       .catch((loadError) => { if (active) setError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar a organização.'); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+
+    function applyLiveOrganization(next: OrganizationBrand | null | undefined) {
+      if (!active || !next?.id || organizationRef.current?.id !== next.id) return;
+
+      const currentOrganization = organizationRef.current;
+      const draftIsClean = currentOrganization
+        && JSON.stringify(formRef.current) === JSON.stringify(toForm(currentOrganization));
+      organizationRef.current = next;
+      setOrganization(next);
+      if (draftIsClean) {
+        const nextForm = toForm(next);
+        formRef.current = nextForm;
+        setForm(nextForm);
+      }
+      setLoginUrl(`${window.location.origin}/login?org=${encodeURIComponent(next.slug)}`);
+    }
+
+    function handleOrganizationUpdated(event: Event) {
+      applyLiveOrganization((event as CustomEvent<OrganizationBrand>).detail);
+    }
+
+    async function refreshOrganization() {
+      try {
+        const response = await fetch('/api/me', { cache: 'no-store' });
+        const payload = await response.json();
+        applyLiveOrganization(payload.data?.organization);
+      } catch {
+        // Mantém a última prévia se a consulta de atualização falhar.
+      }
+    }
+
+    window.addEventListener('organization:updated', handleOrganizationUpdated);
+    void refreshOrganization();
+    const refreshTimer = window.setInterval(() => void refreshOrganization(), 5000);
+    let channel: BroadcastChannel | null = null;
+    if ('BroadcastChannel' in window) {
+      channel = new BroadcastChannel('majurh:organization-updated');
+      channel.onmessage = (event: MessageEvent<OrganizationBrand>) => applyLiveOrganization(event.data);
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener('organization:updated', handleOrganizationUpdated);
+      window.clearInterval(refreshTimer);
+      channel?.close();
+    };
   }, []);
 
   const canManage = role === 'admin';
@@ -77,10 +146,12 @@ export function OrganizationClient() {
       const payload = await response.json();
       if (!response.ok) { setError(payload.error || 'Não foi possível salvar a identidade.'); return; }
       const updated = { ...organization, ...(payload.data.organization as OrganizationBrand) };
+      organizationRef.current = updated;
       setOrganization(updated);
       setForm(toForm(updated));
+      formRef.current = toForm(updated);
       setLoginUrl(`${window.location.origin}/login?org=${encodeURIComponent(updated.slug)}`);
-      window.dispatchEvent(new CustomEvent<OrganizationBrand>('organization:updated', { detail: updated }));
+      publishOrganizationUpdate(updated);
       setMessage('Identidade e tela de login atualizadas.');
     } catch {
       setError('Não foi possível salvar a identidade. Tente novamente.');
@@ -103,8 +174,9 @@ export function OrganizationClient() {
       const payload = await response.json();
       if (!response.ok) { setError(payload.error || 'Não foi possível enviar o arquivo.'); return; }
       const updated = { ...organization, ...(payload.data.organization as OrganizationBrand) };
+      organizationRef.current = updated;
       setOrganization(updated);
-      window.dispatchEvent(new CustomEvent<OrganizationBrand>('organization:updated', { detail: updated }));
+      publishOrganizationUpdate(updated);
       setMessage(kind === 'logo' ? 'Logo enviada e aplicada.' : 'Banner enviado e aplicado.');
     } catch {
       setError('Não foi possível enviar o arquivo. Tente novamente.');

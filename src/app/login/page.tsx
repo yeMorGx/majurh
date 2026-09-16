@@ -109,11 +109,34 @@ export default function LoginPage() {
     );
     setPreviewDeployment(isVercelPreviewDeployment());
     if (!slug) return;
+    const organizationSlug = slug;
 
-    fetch(`/api/branding?slug=${encodeURIComponent(slug)}`, { cache: 'no-store' })
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload) => setOrganization(payload?.data?.organization ?? null))
-      .catch(() => undefined);
+    let active = true;
+    async function refreshBranding() {
+      try {
+        const response = await fetch(`/api/branding?slug=${encodeURIComponent(organizationSlug)}`, { cache: 'no-store' });
+        const payload = response.ok ? await response.json() : null;
+        if (active && payload?.data?.organization) setOrganization(payload.data.organization);
+      } catch {
+        // Mantém a última identidade carregada se houver uma falha momentânea.
+      }
+    }
+
+    void refreshBranding();
+    const refreshTimer = window.setInterval(() => void refreshBranding(), 5000);
+    let channel: BroadcastChannel | null = null;
+    if ('BroadcastChannel' in window) {
+      channel = new BroadcastChannel('majurh:organization-updated');
+      channel.onmessage = (event: MessageEvent<OrganizationBrand>) => {
+        if (event.data?.slug === organizationSlug) setOrganization(event.data);
+      };
+    }
+
+    return () => {
+      active = false;
+      window.clearInterval(refreshTimer);
+      channel?.close();
+    };
   }, []);
 
   useEffect(() => {

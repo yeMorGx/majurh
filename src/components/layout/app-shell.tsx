@@ -23,6 +23,7 @@ type MeResponse = {
     organization: OrganizationBrand | null;
   };
 };
+type MeData = NonNullable<MeResponse['data']>;
 
 const navItems: Array<{ href: string; label: string; icon: IconName }> = [
   { href: '/dashboard', label: 'Dashboard', icon: 'layout-dashboard' },
@@ -37,24 +38,43 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [me, setMe] = useState<MeResponse['data'] | null>(null);
+  const [me, setMe] = useState<MeData | null>(null);
   const [meLoaded, setMeLoaded] = useState(false);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     let active = true;
-    fetch('/api/me', { cache: 'no-store' })
-      .then((response) => response.json())
-      .then((payload: MeResponse) => {
-        if (active && payload.data) {
-          setMe(payload.data);
+    async function refreshMe() {
+      try {
+        const response = await fetch('/api/me', { cache: 'no-store' });
+        const payload = await response.json() as MeResponse;
+        const next = payload.data;
+        if (active && next) {
+          setMe((current) => sameMeData(current, next) ? current : next);
         }
-      })
-      .catch(() => undefined)
-      .finally(() => setMeLoaded(true));
+      } catch {
+        // A falha momentânea não derruba a sessão já carregada.
+      } finally {
+        if (active) setMeLoaded(true);
+      }
+    }
+
+    void refreshMe();
+    const refreshTimer = window.setInterval(() => void refreshMe(), 5000);
+
+    let channel: BroadcastChannel | null = null;
+    if ('BroadcastChannel' in window) {
+      channel = new BroadcastChannel('majurh:organization-updated');
+      channel.onmessage = (event: MessageEvent<OrganizationBrand>) => {
+        if (!event.data?.id) return;
+        setMe((current) => current ? { ...current, organization: event.data } : current);
+      };
+    }
 
     return () => {
       active = false;
+      window.clearInterval(refreshTimer);
+      channel?.close();
     };
   }, []);
 
@@ -236,4 +256,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
     </div>
   );
+}
+
+function sameMeData(current: MeData | null, next: MeData) {
+  if (!current) return false;
+  return current.user.id === next.user.id
+    && current.user.email === next.user.email
+    && JSON.stringify(current.profile) === JSON.stringify(next.profile)
+    && JSON.stringify(current.membership) === JSON.stringify(next.membership)
+    && JSON.stringify(current.organization) === JSON.stringify(next.organization);
 }
