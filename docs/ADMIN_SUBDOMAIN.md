@@ -1,48 +1,62 @@
-# Console administrativo no Neon
+# Console administrativo separado
 
-O cadastro público continua desativado. Novos acessos devem ser criados pela conta administradora no console isolado do Majurh.
+O Majurh agora tem dois projetos Next.js no mesmo repositório:
 
-O primeiro usuário que autenticar sem organização pode criar o próprio espaço pelo fluxo **Criar organização**. Esse usuário vira administrador automaticamente; os acessos seguintes devem ser criados pelo console administrativo.
+- `maju/`: produto operacional, usado por recrutadores e gestores;
+- `maju/admin-portal/`: console privado de administração, publicado como um projeto Vercel separado.
 
-## Rotas
+O console administrativo é responsável por criar e administrar usuários, consultar o Google Analytics 4 e configurar o estado público do produto. Ele usa Neon Auth para a sessão e o mesmo Neon Postgres do produto principal. A regra de autorização exige que a pessoa tenha papel `admin` em uma organização.
 
-- Local: `http://localhost:3000/admin`
-- Produção: `https://admin.seu-dominio.com`
+## Publicação na Vercel
 
-Quando alguém abre a raiz do subdomínio, o app direciona para `/admin`. O middleware do Neon Auth protege a rota e leva pessoas não autenticadas para o login. A tela de login não possui botão de criação pública.
+Crie um segundo projeto Vercel apontando para o mesmo repositório e defina:
 
-## Criação de usuário
-
-`POST /api/admin/users` executa este fluxo no servidor:
-
-1. valida a sessão Neon Auth e o papel `admin` na organização;
-2. cria a conta com e-mail, nome e senha no Neon Auth;
-3. cria ou atualiza o perfil em `public.profiles`;
-4. grava o vínculo e o papel em `public.organization_members`;
-5. remove a conta criada no Neon Auth se a gravação do vínculo falhar.
-
-A senha temporária não é armazenada em texto no Postgres nem devolvida pelo servidor. Ela fica somente no estado da tela do administrador para ser copiada e enviada por um canal seguro.
-
-Não é necessário criar uma nova tabela ou migração para este fluxo: `profiles` e `organization_members` já fazem parte das migrações do Neon. O papel `admin` do Majurh é independente da role interna do Neon Auth; a conta administradora precisa também ter permissão de administrador no Neon Auth para chamar o endpoint de criação.
-
-## Configuração do domínio
-
-Na Vercel, adicione `admin.seu-dominio.com` em **Settings → Domains** e crie o registro DNS indicado pela própria Vercel. Depois, inclua o domínio final em **Auth → Configuration → Domains** no branch principal do Neon Auth.
-
-As variáveis continuam sendo as mesmas do app:
-
-```env
-DATABASE_URL=... # ou POSTGRES_URL=...
-NEON_AUTH_BASE_URL=...
-NEON_AUTH_COOKIE_SECRET=...
+```text
+Root Directory: admin-portal
+Framework Preset: Next.js
+Build Command: npm run build
+Install Command: npm install
 ```
 
-O login iniciado no subdomínio retorna para o console administrativo. Como a sessão é configurada por domínio por padrão, isso não exige compartilhar o cookie com o domínio principal. Se o produto precisar de uma sessão única entre `app.` e `admin.`, configure explicitamente um domínio de cookie no servidor, após validar essa decisão de segurança.
+Associe o domínio `admin.seu-dominio.com` ao projeto administrativo. No projeto principal, configure:
 
-## Validação manual
+```env
+NEXT_PUBLIC_ADMIN_APP_URL=https://admin.seu-dominio.com
+```
 
-1. Abra `/admin` autenticado como administrador.
-2. Crie um usuário de teste com papel `Recrutador` ou `Visualizador`.
-3. Confirme que ele aparece em **Pessoas com acesso**.
-4. Em uma janela anônima, abra o domínio principal e entre com o e-mail e a senha temporária.
-5. Confirme que o usuário acessa a organização, mas não consegue abrir o console administrativo.
+O caminho legado `https://majurh.vercel.app/admin` não renderiza mais o console. Ele redireciona para o domínio administrativo quando `NEXT_PUBLIC_ADMIN_APP_URL` estiver configurado.
+
+## Variáveis do projeto admin-portal
+
+Use os mesmos valores de Neon do app principal:
+
+```env
+NEON_AUTH_BASE_URL=...
+NEON_AUTH_COOKIE_SECRET=...
+DATABASE_URL=...
+```
+
+Também configure:
+
+```env
+NEXT_PUBLIC_MAJURH_APP_URL=https://majurh.vercel.app
+GOOGLE_ANALYTICS_SERVICE_ACCOUNT_JSON={...}
+```
+
+`GOOGLE_ANALYTICS_SERVICE_ACCOUNT_JSON` é um segredo server-side. A conta de serviço precisa ter acesso de leitor à propriedade GA4. Ela nunca é exposta ao navegador nem salva no banco.
+
+## Migração compartilhada
+
+Antes de salvar as configurações do site, execute `neon/migrations/0014_admin_site_settings.sql` no banco Neon compartilhado. A tela informa `Migração pendente` e continua permitindo a leitura do restante do console até essa etapa ser concluída.
+
+Essa migração cria apenas `public.admin_site_settings`, com modo de manutenção, URL pública e IDs da propriedade GA4. O JSON da conta de serviço permanece na configuração do projeto administrativo.
+
+## Fluxo de acesso
+
+1. A pessoa abre o domínio administrativo e entra pelo Neon Auth.
+2. O portal resolve a organização vinculada à sessão.
+3. Apenas papel `admin` consegue abrir o console.
+4. O administrador cria usuários com senha temporária e papel inicial.
+5. A conta criada pode entrar no produto principal, mas não tem acesso ao console administrativo.
+
+O cadastro público continua desativado. O administrador pode editar papel, trocar senha ou remover o vínculo de uma pessoa da organização. Remover não apaga a conta global do Neon Auth.

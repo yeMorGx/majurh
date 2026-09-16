@@ -13,3 +13,6 @@ supabase/.temp/
 
 .vercel
 .env*
+
+# Cache de TypeScript do projeto Vercel administrativo.
+admin-portal/tsconfig.tsbuildinfo

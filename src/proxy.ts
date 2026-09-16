@@ -13,14 +13,9 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next({ request });
   }
 
-  const hostname = request.nextUrl.hostname.toLowerCase();
-  const isAdminSubdomain = hostname.startsWith('admin.');
-  const loginUrl = isAdminSubdomain ? '/login?redirectedFrom=/admin' : '/login';
-
-  // A mesma aplicação atende o domínio principal e o console isolado. No
-  // subdomínio admin, o middleware direciona o visitante para o console
-  // correto após autenticar, sem expor essa tela na navegação do app.
-  return auth.middleware({ loginUrl })(request);
+  // O console administrativo é um projeto Vercel separado. Este middleware
+  // protege apenas o produto operacional.
+  return auth.middleware({ loginUrl: '/login' })(request);
 }
 
 export const config = {

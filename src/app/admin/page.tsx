@@ -1,7 +1,8 @@
-import { AdminConsoleClient } from '@/components/admin/admin-console-client';
+import { redirect } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
 
 export default function AdminPage() {
-  return <AdminConsoleClient />;
+  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_APP_URL;
+  redirect(adminUrl || '/dashboard?notice=admin-moved');
 }

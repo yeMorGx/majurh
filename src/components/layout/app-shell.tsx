@@ -199,10 +199,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             <Icon name="building" />
             <span>Empresas</span>
           </Link>}
-          {me?.membership?.role === 'admin' && <Link className={`sidebar-link ${pathname.startsWith('/administracao') ? 'is-active' : ''}`} href="/administracao" aria-current={pathname.startsWith('/administracao') ? 'page' : undefined}>
-            <Icon name="users" />
-            <span>Administração</span>
-          </Link>}
           <Link className={`sidebar-link ${pathname.startsWith('/configuracoes') ? 'is-active' : ''}`} href="/configuracoes" aria-current={pathname.startsWith('/configuracoes') ? 'page' : undefined}>
             <AnimatedGearIcon />
             <span>Configurações</span>

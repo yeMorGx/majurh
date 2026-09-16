@@ -1,5 +1,6 @@
-import { AdminClient } from '@/components/admin/admin-client';
+import { redirect } from 'next/navigation';
 
 export default function AdministrationPage() {
-  return <AdminClient />;
+  const adminUrl = process.env.NEXT_PUBLIC_ADMIN_APP_URL;
+  redirect(adminUrl || '/dashboard?notice=admin-moved');
 }
