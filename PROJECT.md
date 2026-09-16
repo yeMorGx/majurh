@@ -2,9 +2,9 @@
 
 > Documento de referência para construir o MVP no Codex.
 
-## Status de implementação — 14/09/2026
+## Status de implementação — 15/09/2026
 
-O núcleo do MVP foi migrado para Neon: Neon Auth para identidade, Neon Postgres para dados relacionais e Vercel Blob privado para documentos. O acesso agora é fechado: a tela pública só permite entrar, administradores geram convites de uso único e novos membros concluem o cadastro no link recebido. A área de organização concentra o white-label, incluindo logo, cores, textos e banner da tela de login.
+O núcleo do MVP foi migrado para Neon: Neon Auth para identidade, Neon Postgres para dados relacionais e Vercel Blob privado para documentos. O acesso agora é fechado: a tela pública só permite entrar, administradores geram convites de uso único e novos membros concluem o cadastro no link recebido. A área de organização concentra a equipe, a presença dos membros e o white-label, incluindo logo, cores, textos e banner da tela de login.
 
 Validações executadas:
 
@@ -16,6 +16,8 @@ Validações executadas:
 Migração concluída: o schema e os dados de negócio do backup foram importados no Neon, o Blob privado foi criado em São Paulo e conectado ao `majurh` nos ambientes Development, Preview e Production. O PDF legado foi enviado para o Blob e o registro do documento foi atualizado. O domínio oficial `https://majurh.vercel.app` também foi cadastrado como origem confiável no Neon Auth. O passo a passo está em [docs/SETUP.md](./docs/SETUP.md).
 
 As migrações `0002` a `0005` foram aplicadas no banco Neon e o fluxo de Administração voltou a carregar. A base de integrações está pronta; falta configurar `INTEGRATIONS_ENCRYPTION_KEY` antes de armazenar credenciais de provedores. A ponte `legacy_auth_users` preserva o vínculo dos e-mails migrados com a organização sem copiar hashes de senha do Supabase.
+
+A migração `0010_member_presence.sql` adiciona `presence_status` e `presence_updated_at` a `organization_members`. A página `/organizacao` consulta os membros autenticados, atualiza a presença da pessoa ativa e trata um status online sem heartbeat por 90 segundos como offline. A personalização foi retirada do conteúdo principal e aberta pelo botão **Personalizar**, em um modal exclusivo para administradores.
 
 ## 1. Visão do produto
 
@@ -304,7 +306,9 @@ Catálogo temporário de migração com `id`, `email`, `full_name` e `created_at
 
 #### `organization_members`
 
-`id`, `organization_id`, `user_id`, `email`, `role`, `created_at`.
+`id`, `organization_id`, `user_id`, `email`, `role`, `presence_status`, `presence_updated_at`, `created_at`.
+
+`presence_status` aceita `online`, `offline`, `away` e `busy`. O status é operacional e não substitui a autorização por papel; ele serve apenas para comunicar disponibilidade à equipe.
 
 Roles iniciais: `admin`, `recruiter`, `viewer`. Criar índice composto e restrição única para `(organization_id, user_id)`.
 
