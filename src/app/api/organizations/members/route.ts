@@ -41,8 +41,7 @@ export async function GET(request: NextRequest) {
         select om.user_id, om.email, om.role, om.created_at,
           coalesce(nullif(p.full_name, ''), nullif(lau.full_name, ''), nullif(split_part(om.email, '@', 1), ''), 'Membro da equipe') as full_name,
           case
-            when om.presence_status = 'online'
-              and om.presence_updated_at < now() - interval '90 seconds'
+            when om.presence_updated_at < now() - interval '90 seconds'
               then 'offline'
             else om.presence_status
           end as presence_status,
@@ -53,10 +52,11 @@ export async function GET(request: NextRequest) {
         left join public.legacy_auth_users lau on lau.id = om.user_id
         where om.organization_id = ${organizationId}::uuid
         order by
-          case om.presence_status
-            when 'online' then 0
-            when 'away' then 1
-            when 'busy' then 2
+          case
+            when om.presence_updated_at < now() - interval '90 seconds' then 3
+            when om.presence_status = 'online' then 0
+            when om.presence_status = 'away' then 1
+            when om.presence_status = 'busy' then 2
             else 3
           end,
           lower(coalesce(nullif(p.full_name, ''), nullif(lau.full_name, ''), om.email, ''))

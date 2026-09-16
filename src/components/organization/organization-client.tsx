@@ -160,6 +160,18 @@ export function OrganizationClient() {
     let active = true;
     let hasLoaded = false;
 
+    function handlePresenceUpdated(event: Event) {
+      const detail = (event as CustomEvent<{ organizationId?: string; status?: PresenceStatus; updatedAt?: string }>).detail;
+      if (detail?.organizationId !== currentOrganizationId || !detail.status) return;
+      presenceRef.current = detail.status;
+      setPresence(detail.status);
+      setMembers((current) => current.map((member) => member.is_current_user ? {
+        ...member,
+        presence_status: detail.status as PresenceStatus,
+        presence_updated_at: detail.updatedAt ?? new Date().toISOString(),
+      } : member));
+    }
+
     async function refreshMembers() {
       try {
         const response = await fetch(`/api/organizations/members?organizationId=${encodeURIComponent(currentOrganizationId)}`, { cache: 'no-store' });
@@ -173,27 +185,9 @@ export function OrganizationClient() {
         if (!hasLoaded) {
           const currentMember = nextMembers.find((member) => member.is_current_user);
           const storedStatus = currentMember?.presence_status ?? 'offline';
-          const initialStatus = storedStatus === 'offline' ? 'online' : storedStatus;
           presenceRef.current = storedStatus;
           setPresence(storedStatus);
           hasLoaded = true;
-
-          if (initialStatus !== storedStatus) {
-            try {
-              const presenceResponse = await fetch('/api/organizations/members', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ organizationId: currentOrganizationId, status: initialStatus }),
-              });
-              if (presenceResponse.ok && active) {
-                presenceRef.current = initialStatus;
-                setPresence(initialStatus);
-                updateMemberStatus(setMembers, currentMember?.user_id, initialStatus);
-              }
-            } catch {
-              // Uma falha de presença não impede o carregamento da organização.
-            }
-          }
         }
       } catch (loadError) {
         if (active) setMembersError(loadError instanceof Error ? loadError.message : 'Não foi possível carregar as pessoas da organização.');
@@ -203,19 +197,13 @@ export function OrganizationClient() {
     }
 
     void refreshMembers();
-    const refreshTimer = window.setInterval(() => void refreshMembers(), 20000);
-    const heartbeatTimer = window.setInterval(() => {
-      void fetch('/api/organizations/members', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organizationId: currentOrganizationId, status: presenceRef.current }),
-      });
-    }, 30000);
+    const refreshTimer = window.setInterval(() => void refreshMembers(), 5000);
+    window.addEventListener('presence:updated', handlePresenceUpdated);
 
     return () => {
       active = false;
       window.clearInterval(refreshTimer);
-      window.clearInterval(heartbeatTimer);
+      window.removeEventListener('presence:updated', handlePresenceUpdated);
     };
   }, [organization?.id]);
 
@@ -308,8 +296,13 @@ export function OrganizationClient() {
   async function updatePresence(nextStatus: PresenceStatus) {
     if (!organization || nextStatus === presence || presenceSaving) return;
     const previousStatus = presenceRef.current;
+    const manualStatusKey = `majurh:presence-manual:${organization.id}`;
+    const previousManualStatus = window.localStorage.getItem(manualStatusKey);
     presenceRef.current = nextStatus;
     setPresence(nextStatus);
+    if (nextStatus === 'online') window.localStorage.removeItem(manualStatusKey);
+    else window.localStorage.setItem(manualStatusKey, nextStatus);
+    window.dispatchEvent(new CustomEvent('presence:manual-status', { detail: { organizationId: organization.id, status: nextStatus } }));
     setPresenceSaving(true);
     setMembersError('');
     try {
@@ -325,6 +318,9 @@ export function OrganizationClient() {
     } catch (presenceError) {
       presenceRef.current = previousStatus;
       setPresence(previousStatus);
+      if (previousManualStatus) window.localStorage.setItem(manualStatusKey, previousManualStatus);
+      else window.localStorage.removeItem(manualStatusKey);
+      window.dispatchEvent(new CustomEvent('presence:manual-status', { detail: { organizationId: organization.id, status: previousStatus } }));
       setMembersError(presenceError instanceof Error ? presenceError.message : 'Não foi possível atualizar seu status.');
     } finally {
       setPresenceSaving(false);
@@ -337,6 +333,11 @@ export function OrganizationClient() {
   const dirty = JSON.stringify(form) !== JSON.stringify(toForm(organization));
   const logo = getOrganizationAssetUrl(organization, 'logo') || platformBrand.logoPath;
   const onlineCount = members.filter((member) => member.presence_status === 'online').length;
+  const awayCount = members.filter((member) => member.presence_status === 'away').length;
+  const busyCount = members.filter((member) => member.presence_status === 'busy').length;
+  const offlineCount = members.filter((member) => member.presence_status === 'offline').length;
+  const presenceRate = members.length ? Math.round((onlineCount / members.length) * 100) : 0;
+  const visibleMembers = members.filter((member) => member.presence_status !== 'offline').slice(0, 5);
   const currentMember = members.find((member) => member.is_current_user);
 
   return (
@@ -356,21 +357,35 @@ export function OrganizationClient() {
       {!customizationOpen && error && <div className="form-error" role="alert">{error}</div>}
       {!customizationOpen && message && <div className="form-success" role="status">{message}</div>}
 
-      <section className="organization-overview-banner">
-        <div className="organization-overview-copy">
-          <div className="organization-brand-chip"><span className="organization-brand-mark"><img src={logo} alt="" /></span><span>Workspace ativo</span></div>
-          <h2>Um espaço feito para as pessoas.</h2>
-          <p>Organize o trabalho do RH em um ambiente que tenha a cara da sua organização e deixe claro quem está disponível.</p>
-          <div className="organization-overview-meta">
-            <div><span>Endereço</span><strong>/{organization.slug}</strong></div>
-            <div><span>Acesso</span><strong>{roleLabel(role)}</strong></div>
-            <div><span>Agora</span><strong>{onlineCount} {onlineCount === 1 ? 'pessoa online' : 'pessoas online'}</strong></div>
+      <section className="organization-pulse-card" aria-labelledby="organization-pulse-title">
+        <div className="organization-pulse-main">
+          <div className="organization-pulse-header">
+            <div className="organization-pulse-identity">
+              <span className="organization-brand-mark"><img src={logo} alt="" /></span>
+              <div><span className="organization-pulse-label">Presença do workspace</span><strong>{organization.name}</strong></div>
+            </div>
+            <span className="organization-live-chip"><i /> Ao vivo</span>
+          </div>
+          <div className="organization-pulse-reading">
+            <div><h2 id="organization-pulse-title">{onlineCount} {onlineCount === 1 ? 'pessoa disponível' : 'pessoas disponíveis'}</h2><p>{members.length ? `${presenceRate}% da equipe está disponível para o próximo movimento.` : 'Adicione pessoas para acompanhar a disponibilidade do time.'}</p></div>
+            <div className="organization-presence-meter" role="progressbar" aria-label="Percentual da equipe online" aria-valuemin={0} aria-valuemax={100} aria-valuenow={presenceRate}><span style={{ width: `${presenceRate}%` }} /></div>
+          </div>
+          <div className="organization-pulse-stats">
+            <div><span><i className="presence-dot presence-online" />Online</span><strong>{onlineCount}</strong></div>
+            <div><span><i className="presence-dot presence-away" />Ausentes</span><strong>{awayCount}</strong></div>
+            <div><span><i className="presence-dot presence-busy" />Ocupadas</span><strong>{busyCount}</strong></div>
+            <div><span><i className="presence-dot presence-offline" />Offline</span><strong>{offlineCount}</strong></div>
           </div>
         </div>
-        <div className="organization-overview-art" aria-hidden="true"><span className="organization-orbit organization-orbit-large" /><span className="organization-orbit organization-orbit-small" /><span className="organization-overview-art-card"><img src={logo} alt="" /><strong>{organization.name}</strong><small>Equipe em movimento</small><i /></span></div>
+        <aside className="organization-pulse-side">
+          <div className="organization-pulse-side-heading"><span>Quem está aqui</span><span className="organization-pulse-side-count">{onlineCount} agora</span></div>
+          {visibleMembers.length ? <div className="organization-pulse-avatars" aria-label="Pessoas presentes">{visibleMembers.map((member) => <span key={member.user_id} className={`organization-pulse-avatar pulse-avatar-${member.presence_status}`} title={`${member.full_name} · ${presenceMeta[member.presence_status].label}`}>{initials(member.full_name, member.email)}</span>)}</div> : <div className="organization-pulse-empty"><Icon name="users" size={20} /><span>Ninguém presente ainda.</span></div>}
+          <p>O status considera a atividade recente, o time tracker e compromissos em andamento.</p>
+          <a className="organization-pulse-link" href="#organization-members-section">Ver pessoas e status <Icon name="chevron-down" size={14} /></a>
+        </aside>
       </section>
 
-      <section className="organization-members-panel panel" aria-labelledby="organization-members-title">
+      <section id="organization-members-section" className="organization-members-panel panel" aria-labelledby="organization-members-title">
         <div className="organization-members-header">
           <div className="organization-members-title">
             <span className="organization-section-icon"><Icon name="users" size={19} /></span>

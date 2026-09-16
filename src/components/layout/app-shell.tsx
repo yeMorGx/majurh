@@ -8,6 +8,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Icon, type IconName } from '@/components/ui/icon';
 import { getBrandStyle, getOrganizationAssetUrl, platformBrand, type OrganizationBrand } from '@/lib/branding';
+import { PresenceHeartbeat } from '@/components/presence/presence-heartbeat';
 
 type Profile = {
   id: string;
@@ -137,6 +138,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   async function signOut() {
     try {
+      if (me?.organization?.id) {
+        await fetch('/api/organizations/members', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ organizationId: me.organization.id, status: 'offline' }),
+          keepalive: true,
+        });
+      }
       await authClient.signOut();
     } finally {
       router.replace('/login');
@@ -146,6 +155,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-frame" style={brandStyle as CSSProperties}>
+      <PresenceHeartbeat organizationId={me?.organization?.id} />
       <div className={`mobile-scrim ${mobileOpen ? 'is-visible' : ''}`} onClick={() => setMobileOpen(false)} />
       <aside className={`app-sidebar ${mobileOpen ? 'is-open' : ''}`}>
         <div className="brand-lockup">

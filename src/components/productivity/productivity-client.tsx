@@ -121,6 +121,18 @@ export function ProductivityClient() {
   }, [timerRunning]);
 
   useEffect(() => {
+    if (timerRunning) window.localStorage.setItem('majurh:time-tracker-active', 'true');
+    else window.localStorage.removeItem('majurh:time-tracker-active');
+    window.dispatchEvent(new Event('presence:context-changed'));
+    return () => {
+      if (timerRunning) {
+        window.localStorage.removeItem('majurh:time-tracker-active');
+        window.dispatchEvent(new Event('presence:context-changed'));
+      }
+    };
+  }, [timerRunning]);
+
+  useEffect(() => {
     if (!notice) return;
     const timeout = window.setTimeout(() => setNotice(''), 4200);
     return () => window.clearTimeout(timeout);
@@ -160,6 +172,7 @@ export function ProductivityClient() {
     const title = newEvent.title.trim();
     if (!title) return;
     setEvents((current) => [...current, { id: makeId('event'), title, date: newEvent.date, time: newEvent.time, tone: 'green' as EventTone, source: 'local' as const }].sort((a, b) => `${a.date}${a.time}`.localeCompare(`${b.date}${b.time}`)));
+    window.dispatchEvent(new Event('presence:context-changed'));
     setSelectedDay(newEvent.date);
     setNewEvent((current) => ({ ...current, title: '' }));
     setNotice('Evento salvo no calendário local.');
