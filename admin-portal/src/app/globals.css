@@ -83,7 +83,7 @@ a { color: inherit; }
 .admin-member-identity strong { color: var(--admin-ink); font-size: 13px; }
 .admin-member-identity span { margin-top: 4px; color: var(--admin-muted); font-size: 11px; }
 .admin-role-badge, .admin-availability { flex: 0 0 auto; border-radius: 999px; padding: 5px 8px; font-size: 10px; font-weight: 800; }
-.role-admin { background: #f0dce0; color: var(--admin-wine); }.role-manager { background: #e5e1ef; color: #5b477f; }.role-recruiter { background: #e7efe7; color: #357151; }.role-viewer { background: #ece8e3; color: #756660; }
+.role-active { background: #e7efe7; color: #357151; }.role-revoked { background: #f0dce0; color: var(--admin-wine); }
 .admin-member-actions { display: flex; gap: 12px; margin-left: 8px; }
 .admin-row-button.is-danger { color: var(--admin-danger); }
 .admin-site-signal { display: flex; align-items: start; gap: 13px; border-bottom: 1px solid var(--admin-line); padding: 4px 0 20px; }

@@ -9,20 +9,16 @@ export async function GET() {
 
     const [members, counts] = await Promise.all([
       context.db`
-        select om.user_id, om.email, om.role, om.created_at,
-          coalesce(nullif(p.full_name, ''), nullif(lau.full_name, ''), 'Membro da equipe') as full_name
-        from public.organization_members om
-        left join public.profiles p on p.id = om.user_id
-        left join public.legacy_auth_users lau on lau.id = om.user_id
-        where om.organization_id = ${context.organizationId}::uuid
-        order by om.created_at desc
+        select user_id, email, full_name, is_active, created_at
+        from public.site_access_users
+        order by is_active desc, created_at desc
       `,
       context.db`
         select
-          (select count(*)::int from public.organization_members where organization_id = ${context.organizationId}::uuid) as members,
-          (select count(*)::int from public.candidates where organization_id = ${context.organizationId}::uuid) as candidates,
-          (select count(*)::int from public.recruitment_processes where organization_id = ${context.organizationId}::uuid) as processes,
-          (select count(*)::int from public.candidate_documents where organization_id = ${context.organizationId}::uuid and status in ('pending', 'in_review', 'request_again')) as pending_documents
+          (select count(*)::int from public.site_access_users where is_active = true) as members,
+          (select count(*)::int from public.candidates) as candidates,
+          (select count(*)::int from public.recruitment_processes) as processes,
+          (select count(*)::int from public.candidate_documents where status in ('pending', 'in_review', 'request_again')) as pending_documents
       `,
     ]) as [Array<Record<string, unknown>>, Array<{ members: number; candidates: number; processes: number; pending_documents: number }>];
 
@@ -36,6 +32,7 @@ export async function GET() {
     };
 
     try {
+      if (!context.organizationId) throw new Error('Nenhuma organização operacional cadastrada.');
       const settings = await context.db`
         select maintenance_mode, public_site_url, analytics_property_id, analytics_measurement_id, updated_at
         from public.admin_site_settings

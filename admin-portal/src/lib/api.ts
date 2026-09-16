@@ -56,14 +56,15 @@ export async function getAdminContext(): Promise<OrganizationContext | { respons
     limit 1
   ` as Array<{ organization_id: string; name: string; slug: string }>;
   const membership = memberships[0];
-  if (!membership) return { response: errorJson('Crie uma organização no Majurh antes de administrar o produto.', 503) };
 
   return {
     db,
     userId,
     email,
-    organizationId: membership.organization_id,
-    organization: { name: membership.name, slug: membership.slug },
+    organizationId: membership?.organization_id ?? '',
+    organization: membership
+      ? { name: membership.name, slug: membership.slug }
+      : { name: 'Site inteiro', slug: 'site' },
     scope: 'global',
   };
 }

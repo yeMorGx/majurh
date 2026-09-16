@@ -79,13 +79,13 @@ No cadastro de candidato, o tipo de identidade pode ser RG ou CIN. O componente 
 
 O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e recebe a identidade do tenant pelo parâmetro seguro `org` ou pelos links gerados na área de organização.
 
-Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador ou pela recuperação do provedor. O cadastro público foi desativado: novos acessos devem ser criados pela conta administradora no console isolado **`/admin`** (em produção, no subdomínio administrativo). O fluxo por convite continua disponível em **Administração** para organizações que optarem por convidar a pessoa a concluir o próprio cadastro.
+Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador. O cadastro público foi desativado: novos acessos devem ser criados pela conta administradora no console isolado **`/admin`** (em produção, no subdomínio administrativo). O console grava o acesso geral em `site_access_users`, sem criar `organization_members`; a própria pessoa cria sua organização no primeiro acesso ao Majurh.
 
 O detalhamento do console, do vínculo Neon Auth/Postgres e da configuração do subdomínio está em [`docs/ADMIN_SUBDOMAIN.md`](./ADMIN_SUBDOMAIN.md).
 
 ### Primeiro acesso sem organização
 
-Uma conta autenticada sem perfil conclui primeiro o nome do próprio perfil. Em seguida, se ainda não tiver vínculo, o Majurh apresenta **Criar organização**. O nome informado gera um slug disponível, cria a organização no Neon Postgres e registra automaticamente o usuário como `admin`. A partir daí, a pessoa entra no dashboard e pode configurar o white-label ou criar os demais acessos no console administrativo.
+Uma conta autenticada sem perfil conclui primeiro o nome do próprio perfil. Em seguida, se ainda não tiver vínculo, o Majurh apresenta **Criar organização**. O nome informado gera um slug disponível, cria a organização no Neon Postgres e registra automaticamente o usuário como `admin`. A partir daí, a pessoa entra no dashboard e pode configurar o white-label ou convidar sua equipe dentro da própria organização.
 
 Se a pessoa já tiver sido convidada para uma organização, o convite continua prevalecendo: o vínculo é criado pelo fluxo de `/convite/[token]` e ela não precisa criar uma nova organização.
 
@@ -96,7 +96,7 @@ Se a pessoa já tiver sido convidada para uma organização, o convite continua 
 3. A pessoa abre `/convite/[token]`, define o nome e a senha — ou entra se já possuir uma conta.
 4. Depois da autenticação, a aplicação marca o convite como utilizado, cria o perfil e registra `organization_members`.
 
-O fluxo não envia e-mail automaticamente nesta etapa. O administrador deve compartilhar o link por um canal corporativo confiável. Um usuário autenticado sem associação não pode criar organização nem concluir um perfil para entrar por conta própria.
+O fluxo não envia e-mail automaticamente nesta etapa. O administrador deve compartilhar o link por um canal corporativo confiável. Convites são opcionais para equipes que já possuem uma organização; acessos gerais criados pelo console seguem o onboarding de criação da própria organização.
 
 Em **Auth → Configuration → Domains** do branch principal, mantenha `https://majurh.vercel.app` como domínio confiável. O Neon Auth rejeita requisições de origens não cadastradas com `403 Invalid origin`. Links individuais de preview da Vercel podem permanecer protegidos e não devem ser usados para o cadastro de usuários.
 

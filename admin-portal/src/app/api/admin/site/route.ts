@@ -14,6 +14,7 @@ export async function GET() {
   try {
     const context = await getAdminContext();
     if ('response' in context) return context.response;
+    if (!context.organizationId) return errorJson('O site ainda não possui uma organização operacional para armazenar estas configurações.', 503);
     const settings = await context.db`
       select maintenance_mode, public_site_url, analytics_property_id, analytics_measurement_id, updated_at
       from public.admin_site_settings
@@ -32,6 +33,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const context = await getAdminContext();
     if ('response' in context) return context.response;
+    if (!context.organizationId) return errorJson('O site ainda não possui uma organização operacional para armazenar estas configurações.', 503);
     let body: unknown;
     try { body = await request.json(); } catch { return errorJson('O corpo da requisição deve ser um JSON válido.', 400); }
     if (!isRecord(body)) return errorJson('Informe as configurações do site.', 400);

@@ -9,6 +9,19 @@ export async function getAuthenticatedClient() {
   const email = typeof user?.email === 'string' ? user.email : null;
 
   let legacyUserId: string | null = null;
+  if (authUserId) {
+    const accessRows = (await db`
+      select is_active
+      from public.site_access_users
+      where user_id = ${authUserId}
+      limit 1
+    `) as Array<{ is_active: boolean }>;
+
+    if (accessRows[0] && !accessRows[0].is_active) {
+      return { db, userId: null, authUserId, legacyUserId: null, email };
+    }
+  }
+
   if (authUserId && email) {
     const legacyUsers = (await db`
       select id

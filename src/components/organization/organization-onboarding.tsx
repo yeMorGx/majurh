@@ -88,7 +88,7 @@ export function OrganizationOnboarding({
             {loading ? 'Criando organização…' : 'Criar organização'}
             <Icon name="arrow-up-right" size={16} />
           </button>
-          <p className="onboarding-note">Se sua equipe já possui uma organização, peça ao administrador para adicionar este e-mail como membro.</p>
+          <p className="onboarding-note">Este é o primeiro passo do seu espaço. Depois de criar a organização, você poderá personalizá-la e convidar sua equipe.</p>
         </form>
       </section>
     </div>

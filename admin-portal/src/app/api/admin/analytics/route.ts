@@ -9,6 +9,7 @@ export async function GET() {
   try {
     const context = await getAdminContext();
     if ('response' in context) return context.response;
+    if (!context.organizationId) return json({ data: { configured: false, reason: 'O site ainda não possui uma organização operacional para armazenar a configuração do Google Analytics.' } }, 503);
     const settings = await context.db`
       select analytics_property_id
       from public.admin_site_settings

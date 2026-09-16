@@ -3,8 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 type Tab = 'overview' | 'users' | 'analytics' | 'site';
-type Role = 'admin' | 'manager' | 'recruiter' | 'viewer';
-type Member = { user_id: string; email: string; role: Role; full_name: string; created_at: string };
+type Member = { user_id: string; email: string; full_name: string; is_active: boolean; created_at: string };
 type SiteSettings = { available: boolean; maintenanceMode: boolean; publicSiteUrl: string; analyticsPropertyId: string; analyticsMeasurementId: string; updatedAt: string | null };
 type Overview = {
   organization: { name: string; slug: string };
@@ -14,8 +13,6 @@ type Overview = {
   site: SiteSettings;
 };
 type Analytics = { configured: boolean; reason?: string; propertyId?: string; openUrl?: string; daily?: Array<{ date: string; activeUsers: number; sessions: number; events: number }>; totals?: { activeUsers: number; sessions: number; events: number } };
-
-const roleLabels: Record<Role, string> = { admin: 'Administrador', manager: 'Gestor', recruiter: 'Recrutador', viewer: 'Visualizador' };
 
 export function AdminConsole() {
   const [tab, setTab] = useState<Tab>('overview');
@@ -27,7 +24,7 @@ export function AdminConsole() {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
   const [createdCredentials, setCreatedCredentials] = useState<{ name: string; email: string; password: string } | null>(null);
-  const [userForm, setUserForm] = useState({ name: '', email: '', password: '', role: 'recruiter' as Exclude<Role, 'admin'> });
+  const [userForm, setUserForm] = useState({ name: '', email: '', password: '' });
   const [siteForm, setSiteForm] = useState<SiteSettings>({ available: false, maintenanceMode: false, publicSiteUrl: '', analyticsPropertyId: '', analyticsMeasurementId: '', updatedAt: null });
 
   async function request<T>(path: string, init?: RequestInit): Promise<T> {
@@ -74,10 +71,10 @@ export function AdminConsole() {
     setNotice('');
     try {
       const password = userForm.password || generatePassword();
-      await request('/api/admin/users', { method: 'POST', body: JSON.stringify({ ...userForm, password }) });
+      await request('/api/admin/users', { method: 'POST', body: JSON.stringify({ name: userForm.name, email: userForm.email, password }) });
       setCreatedCredentials({ name: userForm.name, email: userForm.email, password });
-      setUserForm({ name: '', email: '', password: '', role: 'recruiter' });
-      setNotice('Acesso criado. Copie a senha temporária antes de fechar este aviso.');
+      setUserForm({ name: '', email: '', password: '' });
+      setNotice('Acesso geral criado. A pessoa deverá criar a própria organização no primeiro acesso.');
       await loadOverview();
     } catch (createError) { setError(createError instanceof Error ? createError.message : 'Não foi possível criar o acesso.'); }
   }
@@ -87,10 +84,9 @@ export function AdminConsole() {
     if (!editingMember) return;
     const form = new FormData(event.currentTarget);
     const password = String(form.get('password') || '');
-    const role = String(form.get('role') || editingMember.role) as Role;
     setError('');
     try {
-      await request(`/api/admin/users/${editingMember.user_id}`, { method: 'PATCH', body: JSON.stringify({ role, ...(password ? { password } : {}) }) });
+      await request(`/api/admin/users/${editingMember.user_id}`, { method: 'PATCH', body: JSON.stringify(password ? { password } : {}) });
       setEditingMember(null);
       setNotice('Acesso atualizado.');
       await loadOverview();
@@ -98,13 +94,22 @@ export function AdminConsole() {
   }
 
   async function removeMember(member: Member) {
-    if (!window.confirm(`Remover ${member.full_name} da organização? A conta do Neon Auth será preservada, mas o acesso ao espaço será retirado.`)) return;
+    if (!window.confirm(`Revogar o acesso geral de ${member.full_name}? A conta será preservada, mas não poderá iniciar uma sessão ativa no Majurh.`)) return;
     setError('');
     try {
       await request(`/api/admin/users/${member.user_id}`, { method: 'DELETE' });
-      setNotice('Acesso removido da organização.');
+      setNotice('Acesso geral revogado.');
       await loadOverview();
     } catch (removeError) { setError(removeError instanceof Error ? removeError.message : 'Não foi possível remover o acesso.'); }
+  }
+
+  async function reactivateMember(member: Member) {
+    setError('');
+    try {
+      await request(`/api/admin/users/${member.user_id}`, { method: 'PATCH', body: JSON.stringify({ isActive: true }) });
+      setNotice('Acesso geral reativado.');
+      await loadOverview();
+    } catch (reactivateError) { setError(reactivateError instanceof Error ? reactivateError.message : 'Não foi possível reativar o acesso.'); }
   }
 
   async function saveSite(event: FormEvent<HTMLFormElement>) {
@@ -143,7 +148,7 @@ export function AdminConsole() {
     <main className="admin-shell">
       <aside className="admin-rail">
         <div className="admin-rail-brand"><span className="admin-brand-mark" aria-hidden="true">M</span><span>Majurh <small>admin</small></span></div>
-        <div className="admin-rail-context"><span>Escopo do console</span><strong>{overview?.scope === 'global' ? 'Site inteiro' : overview?.organization.name || 'Sem organização'}</strong><small>{memberCountLabel} na organização principal</small></div>
+        <div className="admin-rail-context"><span>Escopo do console</span><strong>Site inteiro</strong><small>{memberCountLabel} com acesso geral</small></div>
         <nav className="admin-nav" aria-label="Navegação administrativa">
           <NavButton active={tab === 'overview'} onClick={() => selectTab('overview')} label="Visão geral" hint="01" />
           <NavButton active={tab === 'users'} onClick={() => selectTab('users')} label="Usuários" hint="02" />
@@ -159,7 +164,7 @@ export function AdminConsole() {
           {error && <div className="admin-alert admin-alert-error" role="alert">{error}</div>}
           {notice && <output className="admin-alert admin-alert-success">{notice}</output>}
           {tab === 'overview' && <OverviewPanel overview={overview} onUsers={() => selectTab('users')} onSite={() => selectTab('site')} />}
-          {tab === 'users' && <UsersPanel members={members} userForm={userForm} setUserForm={setUserForm} onCreate={createUser} editingMember={editingMember} setEditingMember={setEditingMember} onUpdate={updateMember} onRemove={removeMember} />}
+          {tab === 'users' && <UsersPanel members={members} userForm={userForm} setUserForm={setUserForm} onCreate={createUser} editingMember={editingMember} setEditingMember={setEditingMember} onUpdate={updateMember} onRemove={removeMember} onReactivate={reactivateMember} />}
           {tab === 'analytics' && <AnalyticsPanel analytics={analytics} loading={analyticsLoading} onConfigure={() => selectTab('site')} />}
           {tab === 'site' && <SitePanel site={siteForm} setSite={setSiteForm} onSave={saveSite} />}
         </div>
@@ -178,7 +183,7 @@ function OverviewPanel({ overview, onUsers, onSite }: { overview: Overview | nul
   const latest = (overview?.members ?? []).slice(0, 4);
   return <>
     <div className="admin-metric-grid">
-      <Metric label="Usuários com acesso" value={metrics.members} caption="vínculos ativos na organização" />
+      <Metric label="Usuários com acesso" value={metrics.members} caption="acessos gerais ativos no Majurh" />
       <Metric label="Candidatos" value={metrics.candidates} caption="registros no produto principal" />
       <Metric label="Processos" value={metrics.processes} caption="processos seletivos cadastrados" />
       <Metric label="Pendências" value={metrics.pending_documents} caption="documentos que pedem atenção" tone={metrics.pending_documents > 0 ? 'warm' : 'quiet'} />
@@ -190,8 +195,9 @@ function OverviewPanel({ overview, onUsers, onSite }: { overview: Overview | nul
   </>;
 }
 
-function UsersPanel({ members, userForm, setUserForm, onCreate, editingMember, setEditingMember, onUpdate, onRemove }: { members: Member[]; userForm: { name: string; email: string; password: string; role: Exclude<Role, 'admin'> }; setUserForm: (value: { name: string; email: string; password: string; role: Exclude<Role, 'admin'> }) => void; onCreate: (event: FormEvent<HTMLFormElement>) => void; editingMember: Member | null; setEditingMember: (member: Member | null) => void; onUpdate: (event: FormEvent<HTMLFormElement>) => void; onRemove: (member: Member) => void }) {
-  return <div className="admin-users-layout"><section className="admin-panel admin-create-panel"><div className="admin-panel-header"><div><span className="admin-panel-label">Novo acesso</span><h2>Criar usuário</h2></div><span className="admin-count-label">{members.length} ativos</span></div><p className="admin-panel-copy">A senha pode ser gerada automaticamente. Ela será exibida uma única vez após a criação.</p><form className="admin-form" onSubmit={onCreate}><Field label="Nome completo" htmlFor="new-name"><input id="new-name" required minLength={2} value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} placeholder="Nome da pessoa" /></Field><Field label="E-mail corporativo" htmlFor="new-email"><input id="new-email" required type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="pessoa@empresa.com" /></Field><Field label="Papel inicial" htmlFor="new-role"><select id="new-role" value={userForm.role} onChange={(event) => setUserForm({ ...userForm, role: event.target.value as Exclude<Role, 'admin'> })}><option value="recruiter">Recrutador</option><option value="manager">Gestor</option><option value="viewer">Visualizador</option></select></Field><Field label="Senha temporária (opcional)" htmlFor="new-password"><input id="new-password" minLength={8} value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} placeholder="Gerar automaticamente" /></Field><button className="admin-primary-button" type="submit">Criar acesso</button></form></section><section className="admin-panel admin-directory-panel"><div className="admin-panel-header"><div><span className="admin-panel-label">Diretório</span><h2>Pessoas da organização</h2></div><span className="admin-count-label">E-mail único por organização</span></div><div className="admin-member-list">{members.length ? members.map((member) => <MemberRow key={member.user_id} member={member} onEdit={() => setEditingMember(member)} onRemove={() => void onRemove(member)} />) : <EmptyState title="Diretório vazio" body="O primeiro usuário aparece aqui depois que você criar um acesso." />}</div></section>{editingMember && <EditMemberDialog member={editingMember} onClose={() => setEditingMember(null)} onSubmit={onUpdate} />}</div>;
+function UsersPanel({ members, userForm, setUserForm, onCreate, editingMember, setEditingMember, onUpdate, onRemove, onReactivate }: { members: Member[]; userForm: { name: string; email: string; password: string }; setUserForm: (value: { name: string; email: string; password: string }) => void; onCreate: (event: FormEvent<HTMLFormElement>) => void; editingMember: Member | null; setEditingMember: (member: Member | null) => void; onUpdate: (event: FormEvent<HTMLFormElement>) => void; onRemove: (member: Member) => void; onReactivate: (member: Member) => void }) {
+  const activeCount = members.filter((member) => member.is_active).length;
+  return <div className="admin-users-layout"><section className="admin-panel admin-create-panel"><div className="admin-panel-header"><div><span className="admin-panel-label">Novo acesso geral</span><h2>Criar usuário</h2></div><span className="admin-count-label">{activeCount} ativos</span></div><p className="admin-panel-copy">Este acesso entra no Majurh sem organização. No primeiro acesso, a pessoa cria o próprio espaço e se torna administradora dele.</p><form className="admin-form" onSubmit={onCreate}><Field label="Nome completo" htmlFor="new-name"><input id="new-name" required minLength={2} value={userForm.name} onChange={(event) => setUserForm({ ...userForm, name: event.target.value })} placeholder="Nome da pessoa" /></Field><Field label="E-mail de acesso" htmlFor="new-email"><input id="new-email" required type="email" value={userForm.email} onChange={(event) => setUserForm({ ...userForm, email: event.target.value })} placeholder="pessoa@empresa.com" /></Field><Field label="Senha temporária (opcional)" htmlFor="new-password"><input id="new-password" minLength={8} value={userForm.password} onChange={(event) => setUserForm({ ...userForm, password: event.target.value })} placeholder="Gerar automaticamente" /></Field><button className="admin-primary-button" type="submit">Criar acesso geral</button></form></section><section className="admin-panel admin-directory-panel"><div className="admin-panel-header"><div><span className="admin-panel-label">Diretório global</span><h2>Pessoas com acesso ao Majurh</h2></div><span className="admin-count-label">Um e-mail por acesso</span></div><div className="admin-member-list">{members.length ? members.map((member) => <MemberRow key={member.user_id} member={member} onEdit={() => setEditingMember(member)} onRemove={() => void onRemove(member)} onReactivate={() => void onReactivate(member)} />) : <EmptyState title="Nenhum acesso ainda" body="O primeiro usuário aparecerá aqui depois que você criar um acesso geral." />}</div></section>{editingMember && <EditMemberDialog member={editingMember} onClose={() => setEditingMember(null)} onSubmit={onUpdate} />}</div>;
 }
 
 function AnalyticsPanel({ analytics, loading, onConfigure }: { analytics: Analytics | null; loading: boolean; onConfigure: () => void }) {
@@ -205,12 +211,12 @@ function SitePanel({ site, setSite, onSave }: { site: SiteSettings; setSite: (va
   return <form className="admin-site-layout" onSubmit={onSave}><section className="admin-panel admin-site-form-panel"><div className="admin-panel-header"><div><span className="admin-panel-label">Configuração do site</span><h2>Administração do produto</h2></div><span className={`admin-availability ${site.available ? 'is-ready' : 'is-pending'}`}>{site.available ? 'Banco alinhado' : 'Migração pendente'}</span></div><p className="admin-panel-copy">Estas configurações ficam no Neon e podem ser consumidas pelo site principal em tempo real.</p><Field label="URL pública do produto" htmlFor="public-site-url"><input id="public-site-url" type="url" value={site.publicSiteUrl} onChange={(event) => setSite({ ...site, publicSiteUrl: event.target.value })} placeholder="app.suaempresa.com" /></Field><div className="admin-form-divider" /><div className="admin-form-section-title">Medição</div><Field label="ID da propriedade GA4" htmlFor="ga-property"><input id="ga-property" value={site.analyticsPropertyId} onChange={(event) => setSite({ ...site, analyticsPropertyId: event.target.value })} placeholder="123456789" /><small>Somente o número da propriedade, sem o prefixo properties/.</small></Field><Field label="ID de medição (opcional)" htmlFor="ga-measurement"><input id="ga-measurement" value={site.analyticsMeasurementId} onChange={(event) => setSite({ ...site, analyticsMeasurementId: event.target.value })} placeholder="G-XXXXXXXXXX" /></Field><div className="admin-form-divider" /><div className="admin-maintenance-row"><div><strong>Modo manutenção</strong><span>Mostra o estado de manutenção para o produto principal.</span></div><label className="admin-switch" htmlFor="maintenance-mode"><input id="maintenance-mode" type="checkbox" checked={site.maintenanceMode} onChange={(event) => setSite({ ...site, maintenanceMode: event.target.checked })} /><span aria-hidden="true" /></label></div><button className="admin-primary-button" type="submit">Salvar configurações</button></section><aside className="admin-panel admin-site-help-panel"><span className="admin-panel-label">Como funciona</span><h2>Uma configuração, dois projetos.</h2><p>O console administrativo grava no mesmo banco Neon que o Majurh usa. O app principal pode ler o estado público por uma rota server-side, sem expor credenciais.</p><div className="admin-help-list"><div><strong>01</strong><span>Aplicar a migração 0014 no Neon.</span></div><div><strong>02</strong><span>Preencher a propriedade GA4 e salvar.</span></div><div><strong>03</strong><span>Adicionar a conta de serviço como leitora no Google Analytics.</span></div></div><div className="admin-note-block"><strong>Credencial do Google</strong><span>O JSON da conta de serviço fica somente como segredo do projeto admin-portal. Nunca é persistido no banco.</span></div></aside></form>;
 }
 
-function MemberRow({ member, compact = false, onEdit, onRemove }: { member: Member; compact?: boolean; onEdit?: () => void; onRemove?: () => void }) {
-  return <div className={`admin-member-row ${compact ? 'is-compact' : ''}`}><div className="admin-member-initials" aria-hidden="true">{initials(member.full_name)}</div><div className="admin-member-identity"><strong>{member.full_name}</strong><span>{member.email}</span></div><span className={`admin-role-badge role-${member.role}`}>{roleLabels[member.role]}</span>{!compact && <div className="admin-member-actions"><button className="admin-row-button" onClick={onEdit}>Editar</button><button className="admin-row-button is-danger" onClick={onRemove}>Remover</button></div>}</div>;
+function MemberRow({ member, compact = false, onEdit, onRemove, onReactivate }: { member: Member; compact?: boolean; onEdit?: () => void; onRemove?: () => void; onReactivate?: () => void }) {
+  return <div className={`admin-member-row ${compact ? 'is-compact' : ''}`}><div className="admin-member-initials" aria-hidden="true">{initials(member.full_name)}</div><div className="admin-member-identity"><strong>{member.full_name}</strong><span>{member.email}</span></div><span className={`admin-role-badge ${member.is_active ? 'role-active' : 'role-revoked'}`}>{member.is_active ? 'Acesso ativo' : 'Acesso revogado'}</span>{!compact && <div className="admin-member-actions"><button className="admin-row-button" onClick={onEdit}>Editar senha</button>{member.is_active ? <button className="admin-row-button is-danger" onClick={onRemove}>Revogar</button> : <button className="admin-row-button" onClick={onReactivate}>Reativar</button>}</div>}</div>;
 }
 
 function EditMemberDialog({ member, onClose, onSubmit }: { member: Member; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="admin-dialog-backdrop" role="presentation"><dialog open className="admin-dialog" aria-labelledby="edit-member-title"><div className="admin-dialog-header"><div><span className="admin-panel-label">Administrar acesso</span><h2 id="edit-member-title">{member.full_name}</h2></div><button className="admin-close-button" onClick={onClose} aria-label="Fechar">×</button></div><p>{member.email}</p><form className="admin-form" onSubmit={onSubmit}><Field label="Papel" htmlFor="edit-role"><select id="edit-role" name="role" defaultValue={member.role}><option value="admin">Administrador</option><option value="manager">Gestor</option><option value="recruiter">Recrutador</option><option value="viewer">Visualizador</option></select></Field><Field label="Nova senha (opcional)" htmlFor="edit-password"><input id="edit-password" name="password" minLength={8} placeholder="Não alterar" /></Field><div className="admin-dialog-actions"><button className="admin-secondary-button" type="button" onClick={onClose}>Cancelar</button><button className="admin-primary-button" type="submit">Salvar acesso</button></div></form></dialog></div>;
+  return <div className="admin-dialog-backdrop" role="presentation"><dialog open className="admin-dialog" aria-labelledby="edit-member-title"><div className="admin-dialog-header"><div><span className="admin-panel-label">Administrar acesso geral</span><h2 id="edit-member-title">{member.full_name}</h2></div><button className="admin-close-button" onClick={onClose} aria-label="Fechar">×</button></div><p>{member.email}</p><form className="admin-form" onSubmit={onSubmit}><Field label="Nova senha" htmlFor="edit-password"><input id="edit-password" name="password" minLength={8} placeholder="Informe uma nova senha" required /></Field><small>Esta senha é exclusiva do acesso ao Majurh. A organização será criada pela própria pessoa.</small><div className="admin-dialog-actions"><button className="admin-secondary-button" type="button" onClick={onClose}>Cancelar</button><button className="admin-primary-button" type="submit">Salvar senha</button></div></form></dialog></div>;
 }
 
 function CredentialsDialog({ credentials, onClose }: { credentials: { name: string; email: string; password: string }; onClose: () => void }) {
