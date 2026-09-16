@@ -1,23 +1,11 @@
 'use client';
 
-import { authClient } from '@/lib/auth/client';
 import { FormEvent, useState } from 'react';
-
-function authErrorMessage(error: unknown) {
-  const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
-  const message = error instanceof Error
-    ? error.message.toLowerCase()
-    : typeof details.message === 'string' ? details.message.toLowerCase() : '';
-  if (message.includes('invalid') || message.includes('credential')) return 'E-mail ou senha inválidos.';
-  if (message.includes('environment') || message.includes('variável')) return 'O Neon Auth ainda não está configurado neste ambiente.';
-  return 'Não foi possível entrar no console. Tente novamente.';
-}
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [resetSent, setResetSent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -25,37 +13,12 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError('');
     try {
-      const result = await authClient.signIn.email({ email: email.trim(), password });
-      if (result.error) {
-        setError(authErrorMessage(result.error));
-        return;
-      }
+      const response = await fetch('/api/admin/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email.trim(), password }) });
+      const result = await response.json().catch(() => ({})) as { error?: string };
+      if (!response.ok) { setError(result.error || 'Não foi possível entrar no console. Tente novamente.'); return; }
       window.location.assign('/');
-    } catch (loginError) {
-      setError(authErrorMessage(loginError));
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function requestReset() {
-    setError('');
-    setResetSent(false);
-    if (!email.trim()) {
-      setError('Informe seu e-mail para receber o link de redefinição.');
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/request-password-reset', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), redirectTo: 'https://majurh-admin.vercel.app/reset-password' }),
-      });
-      if (!response.ok) throw new Error('reset');
-      setResetSent(true);
     } catch {
-      setError('Não foi possível solicitar a redefinição agora. Tente novamente.');
+      setError('Não foi possível conectar ao console. Tente novamente.');
     } finally {
       setLoading(false);
     }
@@ -77,13 +40,11 @@ export default function AdminLoginPage() {
           <label htmlFor="password">Senha</label>
           <input id="password" name="password" type="password" autoComplete="current-password" placeholder="Sua senha" required value={password} onChange={(event) => setPassword(event.target.value)} />
           {error && <p className="admin-form-error" role="alert">{error}</p>}
-          {resetSent && <p className="admin-form-success" role="status">Se o e-mail estiver cadastrado, o link de redefinição foi enviado.</p>}
           <button className="admin-primary-button" type="submit" disabled={loading}>
             {loading ? 'Verificando acesso...' : 'Entrar no console'}
           </button>
-          <button className="admin-text-button admin-reset-button" type="button" onClick={() => void requestReset()} disabled={loading}>Esqueci minha senha</button>
         </form>
-        <p className="admin-login-footnote">O cadastro público está desativado. Novos acessos são criados por um administrador.</p>
+        <p className="admin-login-footnote">O acesso é criado e gerenciado por um administrador. As credenciais deste console são independentes do Majurh operacional.</p>
       </section>
       <aside className="admin-login-aside" aria-label="Sobre o console">
         <span className="admin-aside-index">MAJURH / ADMIN</span>

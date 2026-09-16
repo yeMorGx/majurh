@@ -1,4 +1,4 @@
-import { auth } from '@/lib/auth/server';
+import { getAdminSession } from '@/lib/admin-session';
 import { getDatabase, type DatabaseClient } from '@/lib/neon/db';
 import { NextResponse } from 'next/server';
 
@@ -35,28 +35,10 @@ export type OrganizationContext = {
   scope: 'global';
 };
 
-export async function getAuthenticatedClient() {
-  const db = getDatabase();
-  const { data: session } = await auth.getSession();
-  const user = session?.user;
-  const authUserId = typeof user?.id === 'string' ? user.id : null;
-  const email = typeof user?.email === 'string' ? user.email : null;
-  let userId = authUserId;
-
-  if (authUserId && email) {
-    const legacy = await db`select id from public.legacy_auth_users where lower(email) = lower(${email}) limit 1` as Array<{ id: string }>;
-    const legacyUserId = legacy[0]?.id ?? null;
-    if (legacyUserId && legacyUserId !== authUserId) {
-      const current = await db`select exists (select 1 from public.profiles where id = ${authUserId}) as has_profile, exists (select 1 from public.organization_members where user_id = ${authUserId}) as has_membership` as Array<{ has_profile: boolean; has_membership: boolean }>;
-      if (!current[0]?.has_profile && !current[0]?.has_membership) userId = legacyUserId;
-    }
-  }
-  return { db, userId, authUserId, email };
-}
-
 export async function getAdminContext(): Promise<OrganizationContext | { response: Response }> {
-  const { db, userId, email } = await getAuthenticatedClient();
-  if (!userId) return { response: errorJson('É necessário estar autenticado.', 401) };
+  const session = await getAdminSession();
+  if (!session) return { response: errorJson('É necessário estar autenticado no console administrativo.', 401) };
+  const { db, userId, email } = session;
 
   const admins = await db`
     select user_id

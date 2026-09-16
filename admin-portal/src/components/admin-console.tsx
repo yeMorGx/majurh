@@ -1,6 +1,5 @@
 'use client';
 
-import { authClient } from '@/lib/auth/client';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 
 type Tab = 'overview' | 'users' | 'analytics' | 'site';
@@ -121,7 +120,7 @@ export function AdminConsole() {
   }
 
   async function signOut() {
-    await authClient.signOut();
+    await fetch('/api/admin/auth/logout', { method: 'POST' });
     window.location.assign('/login');
   }
 
