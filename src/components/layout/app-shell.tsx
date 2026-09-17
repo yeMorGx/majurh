@@ -127,6 +127,8 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   const brandDescriptor = me?.organization ? `Powered by ${platformBrand.name}` : platformBrand.descriptor;
   const brandLogo = getOrganizationAssetUrl(me?.organization, 'logo') || platformBrand.logoPath;
   const brandStyle = getBrandStyle(me?.organization);
+  const needsProfileOnboarding = Boolean(meLoaded && me && (!me.profile || (me.siteAccess && (!me.siteAccess.onboardingCompleted || me.siteAccess.mustChangePassword))));
+  const needsOrganizationOnboarding = Boolean(meLoaded && me?.profile && !me.organization && !needsProfileOnboarding);
 
   useEffect(() => {
     document.title = brandName === platformBrand.name ? platformBrand.name : `${brandName} · ${platformBrand.name}`;
@@ -138,6 +140,25 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
     }
     favicon.href = brandLogo;
   }, [brandLogo, brandName]);
+
+  if (needsProfileOnboarding || needsOrganizationOnboarding) {
+    return (
+      <div className="onboarding-only-shell" style={brandStyle as CSSProperties}>
+        {needsProfileOnboarding ? (
+          <ProfileOnboarding
+            email={me?.user.email ?? null}
+            siteAccess={me?.siteAccess ?? null}
+            onCompleted={(result) => setMe((current) => current ? { ...current, profile: result.profile, siteAccess: { ...current.siteAccess, ...result.siteAccess, onboardingCompletedAt: new Date().toISOString() } } : current)}
+          />
+        ) : (
+          <OrganizationOnboarding
+            email={me?.user.email ?? null}
+            onCompleted={(result) => setMe((current) => current ? { ...current, organization: result.organization, membership: result.membership } : current)}
+          />
+        )}
+      </div>
+    );
+  }
 
   function submitSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -253,24 +274,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           </div>
         </header>
         <main className="app-main">
-          {meLoaded && me && !me.profile ? (
-            <ProfileOnboarding
-              email={me.user.email}
-              siteAccess={me.siteAccess}
-              onCompleted={(result) => setMe((current) => current ? { ...current, profile: result.profile, siteAccess: { ...current.siteAccess, ...result.siteAccess, onboardingCompletedAt: new Date().toISOString() } } : current)}
-            />
-          ) : meLoaded && me?.siteAccess && (!me.siteAccess.onboardingCompleted || me.siteAccess.mustChangePassword) ? (
-            <ProfileOnboarding
-              email={me.user.email}
-              siteAccess={me.siteAccess}
-              onCompleted={(result) => setMe((current) => current ? { ...current, profile: result.profile, siteAccess: { ...current.siteAccess, ...result.siteAccess, onboardingCompletedAt: new Date().toISOString() } } : current)}
-            />
-          ) : meLoaded && me?.profile && !me.organization ? (
-            <OrganizationOnboarding
-              email={me.user.email}
-              onCompleted={(result) => setMe((current) => current ? { ...current, organization: result.organization, membership: result.membership } : current)}
-            />
-          ) : children}
+          {children}
         </main>
       </div>
     </div>

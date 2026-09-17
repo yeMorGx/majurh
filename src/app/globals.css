@@ -210,6 +210,8 @@ kbd { padding: 2px 7px; border: 1px solid var(--vc-border); border-radius: 7px; 
 .form-error { background: var(--vc-danger-soft); color: var(--vc-danger); }
 .form-success { background: var(--vc-mint); color: var(--vc-forest); }
 .onboarding-wrap { max-width: 840px; margin: 0 auto; }
+.onboarding-only-shell { min-height: 100dvh; display: grid; place-items: center; padding: 32px; background: var(--vc-background); color: var(--vc-ink); }
+.onboarding-only-shell > .onboarding-wrap { width: min(100%, 980px); }
 .onboarding-card { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr); overflow: hidden; border: 1px solid var(--vc-border); border-radius: var(--radius-card); background: var(--vc-background); box-shadow: var(--shadow-card); }
 .onboarding-intro { padding: 32px; background: var(--vc-forest); color: white; }
 .onboarding-intro .eyebrow { margin: 22px 0 10px; color: var(--vc-mint); }
@@ -1724,6 +1726,7 @@ kbd { border-color: var(--md-sys-color-outline); border-radius: var(--md-sys-sha
 .organization-welcome-card .onboarding-email { max-width: 560px; margin-top: 8px; padding-top: 16px; border-top: 1px solid var(--vc-border); }
 .organization-welcome-card .button { width: fit-content; margin-top: 12px; }
 @media (max-width: 620px) {
+  .onboarding-only-shell { min-height: 100svh; padding: 16px; place-items: start center; }
   .onboarding-field-grid, .onboarding-choice-grid { grid-template-columns: 1fr; }
   .onboarding-flow-card { min-height: 0; }
   .onboarding-form-actions { flex-direction: column-reverse; }
