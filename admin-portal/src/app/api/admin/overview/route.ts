@@ -9,7 +9,12 @@ export async function GET() {
 
     const [members, counts] = await Promise.all([
       context.db`
-        select user_id, email, full_name, is_active, created_at
+        select
+          user_id,
+          email,
+          coalesce(nullif(btrim(full_name), ''), nullif(split_part(email, '@', 1), ''), 'Acesso sem nome') as full_name,
+          is_active,
+          created_at
         from public.site_access_users
         order by is_active desc, created_at desc
       `,
