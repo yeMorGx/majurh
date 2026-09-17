@@ -1,6 +1,7 @@
-import { getAuth } from '@/lib/auth/server';
 import { databaseErrorResponse, errorJson, getAdminContext, isRecord, json } from '@/lib/api';
+import { hashNeonAuthPassword } from '@/lib/neon-auth-password';
 import { NextRequest } from 'next/server';
+import { randomUUID } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 
@@ -63,22 +64,35 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const existingAuthUser = await context.db`
+      select id
+      from neon_auth."user"
+      where lower(email) = lower(${email})
+      limit 1
+    ` as Array<{ id: string }>;
+    if (existingAuthUser[0]) return errorJson('Este e-mail já possui uma conta no Neon Auth.', 409);
+
     // O Neon Auth exige um nome técnico, mas esse valor não é o nome de perfil:
     // a pessoa define o nome real no onboarding do Majurh.
     const authName = email.split('@')[0].replace(/[^a-zA-ZÀ-ÿ0-9 _-]/g, '').trim().slice(0, 120) || 'Usuário';
-    const created = await getAuth().admin.createUser({ email, password, name: authName });
-    if (created.error || !created.data?.user?.id) {
-      return errorJson(authCreateErrorMessage(created.error), authCreateErrorStatus(created.error));
-    }
-
-    const authUserId = created.data.user.id;
+    const authUserId = randomUUID();
+    const passwordHash = await hashNeonAuthPassword(password);
     try {
-      await context.db`
-        insert into public.site_access_users (user_id, email, full_name, is_active, created_by, must_change_password)
-        values (${authUserId}, ${email}, null, true, ${context.userId}, true)
-      `;
+      await context.db.transaction((tx) => [
+        tx`
+          insert into neon_auth."user" (id, name, email, "emailVerified", "createdAt", "updatedAt")
+          values (${authUserId}::uuid, ${authName}, ${email}, false, now(), now())
+        `,
+        tx`
+          insert into neon_auth.account ("accountId", "providerId", "userId", password, "createdAt", "updatedAt")
+          values (${authUserId}, 'credential', ${authUserId}::uuid, ${passwordHash}, now(), now())
+        `,
+        tx`
+          insert into public.site_access_users (user_id, email, full_name, is_active, created_by, must_change_password)
+          values (${authUserId}, ${email}, null, true, ${context.userId}, true)
+        `,
+      ]);
     } catch (error) {
-      try { await getAuth().admin.removeUser({ userId: authUserId }); } catch { /* preserva o erro do banco */ }
       throw error;
     }
 
@@ -95,16 +109,3 @@ export async function POST(request: NextRequest) {
 }
 
 function isValidEmail(value: string) { return value.length <= 254 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value); }
-function authCreateErrorStatus(error: unknown) {
-  const status = error && typeof error === 'object' && 'status' in error ? Number((error as { status?: unknown }).status) : 0;
-  return status === 409 || status === 422 ? status : 400;
-}
-function authCreateErrorMessage(error: unknown) {
-  const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
-  const code = typeof details.code === 'string' ? details.code.toLowerCase() : '';
-  const message = typeof details.message === 'string' ? details.message.toLowerCase() : '';
-  if (code.includes('already') || message.includes('already') || message.includes('exists')) return 'Este e-mail já possui um acesso no Neon Auth.';
-  if (code.includes('admin') || message.includes('forbidden') || message.includes('not allowed')) return 'Sua conta não tem permissão de administrador no Neon Auth.';
-  if (code.includes('invalid_email') || message.includes('invalid email')) return 'Informe um e-mail válido.';
-  return 'Não foi possível criar o acesso no Neon Auth.';
-}

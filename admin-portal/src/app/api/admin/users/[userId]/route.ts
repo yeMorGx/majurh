@@ -1,5 +1,5 @@
-import { getAuth } from '@/lib/auth/server';
 import { databaseErrorResponse, errorJson, getAdminContext, isRecord, json } from '@/lib/api';
+import { hashNeonAuthPassword } from '@/lib/neon-auth-password';
 import { NextRequest } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -30,8 +30,14 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     if (!access) return errorJson('Este acesso geral não foi encontrado.', 404);
 
     if (password) {
-      const result = await getAuth().admin.setUserPassword({ userId, newPassword: password });
-      if (result.error) return errorJson('Não foi possível trocar a senha no Neon Auth.', 400);
+      const passwordHash = await hashNeonAuthPassword(password);
+      const updatedAccounts = await context.db`
+        update neon_auth.account
+        set password = ${passwordHash}, "updatedAt" = now()
+        where "userId" = ${userId}::uuid and "providerId" = 'credential'
+        returning "userId"
+      ` as Array<{ userId: string }>;
+      if (!updatedAccounts.length) return errorJson('A conta de autenticação não foi encontrada.', 404);
     }
     if (isActive !== null) {
       await context.db`update public.site_access_users set is_active = ${isActive} where user_id = ${userId}`;
