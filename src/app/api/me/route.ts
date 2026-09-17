@@ -10,12 +10,12 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const { db, userId, email } = await getAuthenticatedClient();
+    const { db, userId, authUserId, email } = await getAuthenticatedClient();
     if (!userId) {
       return errorJson('É necessário estar autenticado.', 401);
     }
 
-    const [profiles, memberships] = await Promise.all([
+    const [profiles, memberships, accessRows, onboardingRows] = await Promise.all([
       db`
         select id, full_name, avatar_url
         from public.profiles
@@ -29,10 +29,31 @@ export async function GET() {
         order by created_at asc
         limit 1
       `,
+      db`
+        select user_id, email, is_active, must_change_password, onboarding_completed_at
+        from public.site_access_users
+        where user_id = ${authUserId ?? userId}
+        limit 1
+      `,
+      db`
+        select preferred_name, birth_date, phone, avatar_path, lead_source,
+          referral_name, primary_goal, completed_at
+        from public.user_onboarding_profiles
+        where user_id = ${authUserId ?? userId}
+        limit 1
+      `,
     ]);
 
     const profile = profiles[0] ?? null;
     const membership = memberships[0] ?? null;
+    const siteAccess = accessRows[0]
+      ? {
+          isActive: Boolean(accessRows[0].is_active),
+          mustChangePassword: Boolean(accessRows[0].must_change_password),
+          onboardingCompletedAt: accessRows[0].onboarding_completed_at ?? null,
+          onboardingCompleted: Boolean(accessRows[0].onboarding_completed_at),
+        }
+      : null;
     let organization = null;
 
     if (membership) {
@@ -68,6 +89,8 @@ export async function GET() {
         profile,
         membership,
         organization,
+        siteAccess,
+        onboarding: onboardingRows[0] ?? null,
       },
     });
   } catch (error) {

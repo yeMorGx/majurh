@@ -26,6 +26,20 @@ export async function POST(request: NextRequest) {
       return errorJson('O nome da organização deve ter entre 2 e 120 caracteres.', 400);
     }
 
+    const cnpj = readNullableString(body.cnpj);
+    const legalName = readNullableString(body.legalName);
+    const tradeName = readNullableString(body.tradeName);
+    const employeeRange = readEnum(body.employeeRange, ['1_10', '11_50', '51_200', '200_plus'] as const);
+    const industry = readEnum(body.industry, ['technology', 'services', 'retail', 'industry', 'health', 'other'] as const);
+    const hasDedicatedHr = typeof body.hasDedicatedHr === 'boolean' ? body.hasDedicatedHr : null;
+    const implementationPreference = readEnum(body.implementationPreference, ['guided', 'self_service'] as const);
+    const initialModules = Array.isArray(body.initialModules)
+      ? body.initialModules.filter((item): item is string => typeof item === 'string' && ['attendance', 'documents', 'payroll', 'evaluation'].includes(item)).slice(0, 4)
+      : [];
+    if (cnpj === 'invalid' || legalName === 'invalid' || tradeName === 'invalid' || employeeRange === 'invalid' || industry === 'invalid' || implementationPreference === 'invalid') {
+      return errorJson('Os dados da organização não são válidos.', 400);
+    }
+
     const { db, userId, authUserId, email } = await getAuthenticatedClient();
     if (!userId) return errorJson('É necessário estar autenticado.', 401);
     const ownerUserId = authUserId ?? userId;
@@ -72,8 +86,13 @@ export async function POST(request: NextRequest) {
     const slug = uniqueSlug(baseSlug, new Set(existingSlugs.map((row) => row.slug)));
 
     const organizationRows = await db`
-      insert into public.organizations (name, slug)
-      values (${name}, ${slug})
+      insert into public.organizations (
+        name, slug, cnpj, legal_name, trade_name, employee_range, industry,
+        has_dedicated_hr, initial_modules, implementation_preference
+      ) values (
+        ${name}, ${slug}, ${cnpj || null}, ${legalName || null}, ${tradeName || null}, ${employeeRange || null}, ${industry || null},
+        ${hasDedicatedHr}, ${JSON.stringify(initialModules)}::jsonb, ${implementationPreference || null}
+      )
       returning id, name, slug, brand_logo_path, brand_primary_color, brand_accent_color,
         brand_login_banner_path, brand_login_kicker, brand_login_headline, brand_login_description
     `;
@@ -182,6 +201,11 @@ function readNullableHex(value: unknown): string | null | 'invalid' {
   if (value === undefined || value === null || value === '') return null;
   if (typeof value !== 'string') return 'invalid';
   return normalizeHex(value) ?? 'invalid';
+}
+
+function readEnum<const T extends readonly string[]>(value: unknown, allowed: T): T[number] | null | 'invalid' {
+  if (value === undefined || value === null || value === '') return null;
+  return typeof value === 'string' && allowed.includes(value) ? value : 'invalid';
 }
 
 function slugify(value: string) {

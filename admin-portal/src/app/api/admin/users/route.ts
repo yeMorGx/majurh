@@ -10,8 +10,21 @@ export async function GET() {
     if ('response' in context) return context.response;
 
     const members = await context.db`
-      select user_id, email, full_name, is_active, created_at
-      from public.site_access_users
+      select sau.user_id, sau.email,
+        coalesce(nullif(btrim(sau.full_name), ''), nullif(split_part(sau.email, '@', 1), ''), 'Usuário') as full_name,
+        sau.is_active, sau.must_change_password, sau.onboarding_completed_at, sau.created_at,
+        uop.preferred_name, uop.birth_date, uop.phone, uop.lead_source,
+        uop.referral_name, uop.primary_goal, org.organization_name
+      from public.site_access_users sau
+      left join public.user_onboarding_profiles uop on uop.user_id = sau.user_id
+      left join lateral (
+        select o.name as organization_name
+        from public.organization_members om
+        join public.organizations o on o.id = om.organization_id
+        where om.user_id = sau.user_id
+        order by om.created_at asc
+        limit 1
+      ) org on true
       order by is_active desc, created_at asc
     `;
 
@@ -27,10 +40,8 @@ export async function POST(request: NextRequest) {
     try { body = await request.json(); } catch { return errorJson('O corpo da requisição deve ser um JSON válido.', 400); }
     if (!isRecord(body)) return errorJson('Informe os dados do novo acesso.', 400);
 
-    const name = typeof body.name === 'string' ? body.name.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
-    if (name.length < 2 || name.length > 120) return errorJson('Informe o nome completo (de 2 a 120 caracteres).', 400);
     if (!isValidEmail(email)) return errorJson('Informe um e-mail válido.', 400);
     if (password.length < 8 || password.length > 128) return errorJson('A senha deve ter entre 8 e 128 caracteres.', 400);
 
@@ -52,7 +63,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const created = await getAuth().admin.createUser({ email, password, name });
+    // O Neon Auth exige um nome técnico, mas esse valor não é o nome de perfil:
+    // a pessoa define o nome real no onboarding do Majurh.
+    const authName = email.split('@')[0].replace(/[^a-zA-ZÀ-ÿ0-9 _-]/g, '').trim().slice(0, 120) || 'Usuário';
+    const created = await getAuth().admin.createUser({ email, password, name: authName });
     if (created.error || !created.data?.user?.id) {
       return errorJson(authCreateErrorMessage(created.error), authCreateErrorStatus(created.error));
     }
@@ -60,23 +74,17 @@ export async function POST(request: NextRequest) {
     const authUserId = created.data.user.id;
     try {
       await context.db`
-        insert into public.profiles (id, full_name)
-        values (${authUserId}, ${name})
-        on conflict (id) do update set full_name = excluded.full_name
-      `;
-      await context.db`
-        insert into public.site_access_users (user_id, email, full_name, is_active, created_by)
-        values (${authUserId}, ${email}, ${name}, true, ${context.userId})
+        insert into public.site_access_users (user_id, email, full_name, is_active, created_by, must_change_password)
+        values (${authUserId}, ${email}, null, true, ${context.userId}, true)
       `;
     } catch (error) {
-      try { await context.db`delete from public.profiles where id = ${authUserId}`; } catch { /* preserva o erro original */ }
       try { await getAuth().admin.removeUser({ userId: authUserId }); } catch { /* preserva o erro do banco */ }
       throw error;
     }
 
     return json({
       data: {
-        user: { id: authUserId, name, email, isActive: true },
+        user: { id: authUserId, name: null, email, isActive: true, mustChangePassword: true },
         scope: 'global',
         organizationCreatedByUser: true,
       },

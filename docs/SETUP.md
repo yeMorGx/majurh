@@ -79,7 +79,7 @@ No cadastro de candidato, o tipo de identidade pode ser RG ou CIN. O componente 
 
 O `proxy.ts` usa o middleware do Neon Auth e as chamadas de login/logout passam pelo endpoint interno `/api/auth/[...path]`. O login visual continua customizado para manter o design do Majurh e recebe a identidade do tenant pelo parâmetro seguro `org` ou pelos links gerados na área de organização.
 
-Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador. O cadastro público foi desativado: novos acessos devem ser criados pela conta administradora no console isolado **`/admin`** (em produção, no subdomínio administrativo). O console grava o acesso geral em `site_access_users`, sem criar `organization_members`; a própria pessoa cria sua organização no primeiro acesso ao Majurh.
+Para uma conta migrada, crie o usuário no Neon Auth usando o mesmo e-mail do backup. A tabela `legacy_auth_users` faz a ponte por e-mail e preserva o acesso à organização migrada, mesmo que o Neon Auth gere um novo ID. Os hashes de senha do Supabase não são copiados, pois o Neon Auth usa outro formato; a senha deve ser criada novamente pelo administrador. O cadastro público foi desativado: novos acessos devem ser criados pela conta administradora no console isolado **`/admin`** (em produção, no subdomínio administrativo). O console grava somente e-mail e senha temporária em `site_access_users`, sem criar `organization_members`; a própria pessoa preenche o perfil e cria sua organização no primeiro acesso ao Majurh.
 
 O detalhamento do console, do vínculo Neon Auth/Postgres e da configuração do subdomínio está em [`docs/ADMIN_SUBDOMAIN.md`](./ADMIN_SUBDOMAIN.md).
 
@@ -97,6 +97,8 @@ Se a pessoa já tiver sido convidada para uma organização, o convite continua 
 4. Depois da autenticação, a aplicação marca o convite como utilizado, cria o perfil e registra `organization_members`.
 
 O fluxo não envia e-mail automaticamente nesta etapa. O administrador deve compartilhar o link por um canal corporativo confiável. Convites são opcionais para equipes que já possuem uma organização; acessos gerais criados pelo console seguem o onboarding de criação da própria organização.
+
+O onboarding completo usa a migração `neon/migrations/0018_onboarding_profiles.sql`. Ele registra dados pessoais, origem, objetivo e respostas da organização. Fotos de perfil e logos são sempre enviados como arquivos privados; o banco guarda apenas o caminho interno do arquivo, nunca uma URL digitada.
 
 Em **Auth → Configuration → Domains** do branch principal, mantenha `https://majurh.vercel.app` como domínio confiável. O Neon Auth rejeita requisições de origens não cadastradas com `403 Invalid origin`. Links individuais de preview da Vercel podem permanecer protegidos e não devem ser usados para o cadastro de usuários.
 

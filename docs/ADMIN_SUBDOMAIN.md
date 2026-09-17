@@ -64,4 +64,16 @@ O cadastro público continua desativado. O administrador pode trocar a senha, re
 
 ### Primeiro administrador global
 
-Execute `neon/migrations/0015_site_admins.sql`, `0016_separate_admin_auth.sql` e `0017_global_site_access.sql` no banco compartilhado. Depois, defina o hash da senha própria do console na linha correspondente de `public.site_admins`. A conta administradora pode existir sem qualquer registro em `organization_members`; o console usa o escopo global para os acessos e métricas.
+Execute `neon/migrations/0015_site_admins.sql`, `0016_separate_admin_auth.sql`, `0017_global_site_access.sql` e `0018_onboarding_profiles.sql` no banco compartilhado. Depois, defina o hash da senha própria do console na linha correspondente de `public.site_admins`. A conta administradora pode existir sem qualquer registro em `organization_members`; o console usa o escopo global para os acessos e métricas.
+
+### Primeiro acesso criado pelo admin
+
+O console pede somente e-mail e senha temporária. O nome não é preenchido pelo administrador e não é gravado como nome de perfil. No primeiro login, a pessoa:
+
+1. troca a senha temporária por uma senha pessoal com no mínimo 8 caracteres, número e símbolo;
+2. informa nome preferido, nascimento, telefone/WhatsApp e, opcionalmente, envia uma foto como arquivo;
+3. informa origem do acesso e objetivo principal;
+4. recebe uma tela neutra com a ação única de criar a própria organização;
+5. preenche nome, CNPJ, logo como arquivo, porte, setor, estrutura de RH, módulos iniciais e preferência de implementação.
+
+Os dados ficam em `public.user_onboarding_profiles`, `public.site_access_users` e nas colunas de contexto de `public.organizations`. O diretório de usuários do admin exibe o resumo preenchido, sem inventar dados para a pessoa.

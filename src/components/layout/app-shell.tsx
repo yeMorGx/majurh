@@ -25,6 +25,8 @@ type MeResponse = {
     profile: Profile | null;
     membership: { role: string } | null;
     organization: OrganizationBrand | null;
+    siteAccess: { mustChangePassword: boolean; onboardingCompletedAt: string | null; onboardingCompleted: boolean } | null;
+    onboarding: { preferred_name: string; birth_date: string | null; phone: string | null; avatar_path: string | null; lead_source: string; referral_name: string | null; primary_goal: string; completed_at: string } | null;
   };
 };
 type MeData = NonNullable<MeResponse['data']>;
@@ -254,7 +256,14 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
           {meLoaded && me && !me.profile ? (
             <ProfileOnboarding
               email={me.user.email}
-              onCompleted={(profile) => setMe((current) => current ? { ...current, profile } : current)}
+              siteAccess={me.siteAccess}
+              onCompleted={(result) => setMe((current) => current ? { ...current, profile: result.profile, siteAccess: { ...current.siteAccess, ...result.siteAccess, onboardingCompletedAt: new Date().toISOString() } } : current)}
+            />
+          ) : meLoaded && me?.siteAccess && (!me.siteAccess.onboardingCompleted || me.siteAccess.mustChangePassword) ? (
+            <ProfileOnboarding
+              email={me.user.email}
+              siteAccess={me.siteAccess}
+              onCompleted={(result) => setMe((current) => current ? { ...current, profile: result.profile, siteAccess: { ...current.siteAccess, ...result.siteAccess, onboardingCompletedAt: new Date().toISOString() } } : current)}
             />
           ) : meLoaded && me?.profile && !me.organization ? (
             <OrganizationOnboarding
@@ -274,5 +283,7 @@ function sameMeData(current: MeData | null, next: MeData) {
     && current.user.email === next.user.email
     && JSON.stringify(current.profile) === JSON.stringify(next.profile)
     && JSON.stringify(current.membership) === JSON.stringify(next.membership)
-    && JSON.stringify(current.organization) === JSON.stringify(next.organization);
+    && JSON.stringify(current.organization) === JSON.stringify(next.organization)
+    && JSON.stringify(current.siteAccess) === JSON.stringify(next.siteAccess)
+    && JSON.stringify(current.onboarding) === JSON.stringify(next.onboarding);
 }
